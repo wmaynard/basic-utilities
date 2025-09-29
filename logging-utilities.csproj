@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <LangVersion>14</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>disable</Nullable>
+        <RootNamespace>Maynard.Logging</RootNamespace>
+        <PackageId>maynard-logging-utilities</PackageId>
+        <Title>Logging Utilities</Title>
+        <Authors>Will Maynard</Authors>
+        <Description>A small nuget package for commonly used logging functions in my projects.</Description>
+        <Copyright>Will Maynard 2025</Copyright>
+        <PackageProjectUrl>https://github.com/wmaynard/logging-utilities</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/wmaynard/logging-utilities/blob/main/LICENSE</PackageLicenseUrl>
+        <RepositoryUrl>https://github.com/wmaynard/logging-utilities</RepositoryUrl>
+        <Company>Will Maynard</Company>
+        <Product>maynar-logging-utilities</Product>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+    </PropertyGroup>
+
+</Project>
