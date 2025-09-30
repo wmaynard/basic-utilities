@@ -10,53 +10,60 @@ namespace Maynard.Logging;
 public static class Log
 {
 
-    private static readonly Lock _door = new();
+    private static readonly Lock _Door = new();
     internal static LogConfiguration Configuration { get; set; } = new();
 
     // No owner, data optional
-    public static async Task Good(string message, object data = null) => await Validate(null, Severity.Good, message, data, null);
-    public static async Task Verbose(string message, object data = null) => await Validate(null, Severity.Verbose, message, data, null);
-    public static async Task Info(string message, object data = null) => await Validate(null, Severity.Info, message, data, null);
-    public static async Task Warn(string message, object data = null) => await Validate(null, Severity.Warn, message, data, null);
-    public static async Task Error(string message, object data = null) => await Validate(null, Severity.Error, message, data, null);
-    public static async Task Alert(string message, object data = null) => await Validate(null, Severity.Alert, message, data, null);
+    public static void Good(string message, object data = null) => _ = Validate(null, Severity.Good, message, data, null);
+    public static void Verbose(string message, object data = null) => _ = Validate(null, Severity.Verbose, message, data, null);
+    public static void Info(string message, object data = null) => _ = Validate(null, Severity.Info, message, data, null);
+    public static void Warn(string message, object data = null) => _ = Validate(null, Severity.Warn, message, data, null);
+    public static void Error(string message, object data = null) => _ = Validate(null, Severity.Error, message, data, null);
+    public static void Alert(string message, object data = null) => _ = Validate(null, Severity.Alert, message, data, null);
     
     // No Owner, Exception provided
-    public static async Task Good(string message, Exception exception) => await Validate(null, Severity.Good, message, null, exception);
-    public static async Task Verbose(string message, Exception exception) => await Validate(null, Severity.Verbose, message, null, exception);
-    public static async Task Info(string message, Exception exception) => await Validate(null, Severity.Info, message, null, exception);
-    public static async Task Warn(string message, Exception exception) => await Validate(null, Severity.Warn, message, null, exception);
-    public static async Task Error(string message, Exception exception) => await Validate(null, Severity.Error, message, null, exception);
-    public static async Task Alert(string message, Exception exception) => await Validate(null, Severity.Alert, message, null, exception);
+    public static void Good(string message, Exception exception) => _ = Validate(null, Severity.Good, message, null, exception);
+    public static void Verbose(string message, Exception exception) => _ = Validate(null, Severity.Verbose, message, null, exception);
+    public static void Info(string message, Exception exception) => _ = Validate(null, Severity.Info, message, null, exception);
+    public static void Warn(string message, Exception exception) => _ = Validate(null, Severity.Warn, message, null, exception);
+    public static void Error(string message, Exception exception) => _ = Validate(null, Severity.Error, message, null, exception);
+    public static void Alert(string message, Exception exception) => _ = Validate(null, Severity.Alert, message, null, exception);
+    
+    public static void Good(string message, object data, Exception exception) => _ = Validate(null, Severity.Good, message, data, exception);
+    public static void Verbose(string message, object data, Exception exception) => _ = Validate(null, Severity.Verbose, message, data, exception);
+    public static void Info(string message, object data, Exception exception) => _ = Validate(null, Severity.Info, message, data, exception);
+    public static void Warn(string message, object data, Exception exception) => _ = Validate(null, Severity.Warn, message, data, exception);
+    public static void Error(string message, object data, Exception exception) => _ = Validate(null, Severity.Error, message, data, exception);
+    public static void Alert(string message, object data, Exception exception) => _ = Validate(null, Severity.Alert, message, data, exception);
     
     // Owner provided, Data optional
     
-    public static async Task Good<T>(T owner, string message, object data = null) where T : Enum
-        => await Validate(Convert.ToInt32(owner), Severity.Good, message, data, null);
-    public static async Task Verbose<T>(T owner, string message, object data = null) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Verbose, message, data, null);
-    public static async Task Info<T>(T owner, string message, object data = null) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Info, message, data, null);
-    public static async Task Warn<T>(T owner, string message, object data = null) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Warn, message, data, null);
-    public static async Task Error<T>(T owner, string message, object data = null) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Error, message, data, null);
-    public static async Task Alert<T>(T owner, string message, object data = null) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Alert, message, data, null);
+    public static void Good<T>(T owner, string message, object data = null) where T : Enum
+        => _ = Validate(Convert.ToInt32(owner), Severity.Good, message, data, null);
+    public static void Verbose<T>(T owner, string message, object data = null) where T : Enum 
+        => _ = Validate(Convert.ToInt32(owner), Severity.Verbose, message, data, null);
+    public static void Info<T>(T owner, string message, object data = null) where T : Enum 
+        => _ = Validate(Convert.ToInt32(owner), Severity.Info, message, data, null);
+    public static void Warn<T>(T owner, string message, object data = null) where T : Enum 
+        => _ = Validate(Convert.ToInt32(owner), Severity.Warn, message, data, null);
+    public static void Error<T>(T owner, string message, object data = null) where T : Enum 
+        => _ = Validate(Convert.ToInt32(owner), Severity.Error, message, data, null);
+    public static void Alert<T>(T owner, string message, object data = null) where T : Enum 
+        => _ = Validate(Convert.ToInt32(owner), Severity.Alert, message, data, null);
     
     // Owner & Exception provided
-    public static async Task Good<T>(T owner, string message, Exception exception) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Good, message, null, exception);
-    public static async Task Verbose<T>(T owner, string message, Exception exception) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Verbose, message, null, exception);
-    public static async Task Info<T>(T owner, string message, Exception exception) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Info, message, null, exception);
-    public static async Task Warn<T>(T owner, string message, Exception exception) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Warn, message, null, exception);
-    public static async Task Error<T>(T owner, string message, Exception exception) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Error, message, null, exception);
-    public static async Task Alert<T>(T owner, string message, Exception exception) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Alert, message, null, exception);
+    public static void Good<T>(T owner, string message, Exception exception) where T : Enum 
+        => _ = Validate(Convert.ToInt32(owner), Severity.Good, message, null, exception);
+    public static void Verbose<T>(T owner, string message, Exception exception) where T : Enum 
+        => _ = Validate(Convert.ToInt32(owner), Severity.Verbose, message, null, exception);
+    public static void Info<T>(T owner, string message, Exception exception) where T : Enum 
+        => _ = Validate(Convert.ToInt32(owner), Severity.Info, message, null, exception);
+    public static void Warn<T>(T owner, string message, Exception exception) where T : Enum 
+        => _ = Validate(Convert.ToInt32(owner), Severity.Warn, message, null, exception);
+    public static void Error<T>(T owner, string message, Exception exception) where T : Enum 
+        => _ = Validate(Convert.ToInt32(owner), Severity.Error, message, null, exception);
+    public static void Alert<T>(T owner, string message, Exception exception) where T : Enum 
+        => _ = Validate(Convert.ToInt32(owner), Severity.Alert, message, null, exception);
     
 
     private static async Task Validate(int? ownerId, Severity severity, string message, object data, Exception exception)
@@ -106,7 +113,7 @@ public static class Log
         
         if (!Configuration.IsConfigured)
         {
-            lock (_door)
+            lock (_Door)
                 Configuration.Queue.Enqueue(log, log.Timestamp);
             return;
         }
@@ -114,28 +121,28 @@ public static class Log
         if (!Configuration.UseFlushing)
         {
             if (!Configuration.RerouteLogs)
-                await ToConsole(log);
+                ToConsole(log);
             else
                 Configuration.OnReroute?.Invoke(null, log);
         }
         else
         {
-            lock (_door)
+            lock (_Door)
                 Configuration.Queue.Enqueue(log, log.Timestamp);
             if (Configuration.Queue.Count >= Configuration.BufferSize)
-                await Flush();
+                Flush();
         }
     }
 
-    private static async Task ToConsole(LogData log)
+    private static void ToConsole(LogData log)
     {
         if (Configuration.RerouteIndividualLogs)
             Configuration.OnReroute?.Invoke(null, log);
         else
-            await PrettyPrintToConsole(log);
+            PrettyPrintToConsole(log);
     }
 
-    private static async Task PrettyPrintToConsole(LogData log)
+    private static void PrettyPrintToConsole(LogData log)
     {
         ConsoleColor previous = Console.ForegroundColor;
         ConsoleColor previousBg = Console.BackgroundColor;
@@ -149,7 +156,7 @@ public static class Log
             _ => ConsoleColor.White
         };
 
-        lock (_door)
+        lock (_Door)
         {
             Console.ForegroundColor = color;
             if (log.Severity == Severity.Verbose)
@@ -160,10 +167,10 @@ public static class Log
         }
     }
 
-    private static async Task Flush()
+    private static void Flush()
     {
         Queue<LogData> toPrint = new();
-        lock (_door)
+        lock (_Door)
         {
             while (Configuration.Queue.TryDequeue(out LogData log, out _))
                 toPrint.Enqueue(log);
@@ -172,16 +179,16 @@ public static class Log
             Configuration.OnFlush?.Invoke(null, toPrint.ToArray());
         else
             while (toPrint.TryDequeue(out LogData log))
-                await ToConsole(log);
+                ToConsole(log);
     }
 
-    internal static async Task FlushStartupLogs()
+    internal static void FlushStartupLogs()
     {
         Console.WriteLine(Configuration.RerouteLogs
             ? "Console logs are disabled; logs have been configured to pipe to a different handler."
             : LogData.GetHeaders()
         );
-        await Flush();
+        Flush();
     }
 }
 public enum Owner { Default = 0, Will = 1 }

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using Maynard.ErrorHandling;
 
 namespace Maynard.Extensions;
@@ -81,4 +83,14 @@ public static class EnumExtension
     public static int AsInt<T>(this T flags) where T : Enum => (int)(object)flags;
     private static T AsEnum<T>(this int _int) where T : Enum => (T)(object)_int;
     private static T[] All<T>(this T flags) where T : Enum => (T[])Enum.GetValues(flags.GetType());
+    public static string GetDisplayName<T>(this T obj) where T : Enum
+    {
+        DisplayAttribute att = obj
+            .GetType()
+            .GetMember(obj.ToString())
+            .First()
+            .GetCustomAttribute<DisplayAttribute>();
+
+        return att?.Name ?? obj.ToString();
+    }
 }
