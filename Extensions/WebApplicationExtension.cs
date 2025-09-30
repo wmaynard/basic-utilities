@@ -11,20 +11,20 @@ public static class WebApplicationExtension
     {
         FlexJson.Configure(logEvent =>
         {
-            (logEvent.Severity switch
+            switch (logEvent.Severity)
             {
-                FlexJsonLogEventArgs.GOOD => Log.Good(logEvent.Message, logEvent.Data),
-                FlexJsonLogEventArgs.VERBOSE => Log.Verbose(logEvent.Message, logEvent.Data),
-                FlexJsonLogEventArgs.INFO => Log.Info(logEvent.Message, logEvent.Data),
-                FlexJsonLogEventArgs.WARN => Log.Warn(logEvent.Message, logEvent.Data),
-                FlexJsonLogEventArgs.ERROR => Log.Error(logEvent.Message, logEvent.Data),
-                FlexJsonLogEventArgs.ALERT => Log.Alert(logEvent.Message, logEvent.Data),
-                _ => Log.Error("Unexpected log severity!", new { LogEvent = logEvent })
-            }).Wait();
+                case FlexJsonLogEventArgs.GOOD: Log.Good(logEvent.Message, logEvent.Data); break;
+                case FlexJsonLogEventArgs.VERBOSE: Log.Verbose(logEvent.Message, logEvent.Data); break;
+                case FlexJsonLogEventArgs.INFO: Log.Info(logEvent.Message, logEvent.Data); break;
+                case FlexJsonLogEventArgs.WARN: Log.Warn(logEvent.Message, logEvent.Data); break;
+                case FlexJsonLogEventArgs.ERROR: Log.Error(logEvent.Message, logEvent.Data); break;
+                case FlexJsonLogEventArgs.ALERT: Log.Alert(logEvent.Message, logEvent.Data); break;
+                default: Log.Error("Unexpected log severity!", new { LogEvent = logEvent }); break;
+            }
         });
-        Log.Verbose("FlexJson log events captured and tied to logging.").Wait();
+        Log.Verbose("FlexJson log events captured and tied to logging.");
         builder.Invoke(new());
-        Log.Good("Maynard Tools configured successfully!").Wait();
+        Log.Good("Maynard Tools configured successfully!");
         return app;
     }
 }

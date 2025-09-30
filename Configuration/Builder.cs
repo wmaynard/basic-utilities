@@ -14,7 +14,7 @@ public abstract class Builder
             Log.Alert("Configuration builder method already called!  Each method can only be called once.  Subsequent calls are ignored.", new
             {
                 Method = caller
-            }).Wait();
+            });
             return (T)this;
         }
         action.Invoke();

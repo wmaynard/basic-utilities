@@ -9,7 +9,7 @@ public class PackageConfigurationBuilder : Builder
         logs.Invoke(new());
         Log.Configuration.IsConfigured = true;
         Log.FlushStartupLogs().Wait();
-        Log.Good("Logging configured successfully!").Wait();
+        Log.Good("Logging configured successfully!");
     });
 
     // public PackageConfigurationBuilder ConfigureMinq(Action<MinqConfigurationBuilder> minq) => OnceOnly<PackageConfigurationBuilder>(() =>

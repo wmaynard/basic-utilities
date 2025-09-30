@@ -167,7 +167,7 @@ public static class Log
         }
     }
 
-    private static void Flush()
+    private static async Task Flush() => await Task.Run(() =>
     {
         Queue<LogData> toPrint = new();
         lock (_Door)
@@ -175,20 +175,21 @@ public static class Log
             while (Configuration.Queue.TryDequeue(out LogData log, out _))
                 toPrint.Enqueue(log);
         }
+
         if (Configuration.RerouteBulkLogs)
             Configuration.OnFlush?.Invoke(null, toPrint.ToArray());
         else
             while (toPrint.TryDequeue(out LogData log))
                 ToConsole(log);
-    }
+    });
 
-    internal static void FlushStartupLogs()
+    internal static async Task FlushStartupLogs()
     {
         Console.WriteLine(Configuration.RerouteLogs
             ? "Console logs are disabled; logs have been configured to pipe to a different handler."
             : LogData.GetHeaders()
         );
-        Flush();
+        await Flush();
     }
 }
 public enum Owner { Default = 0, Will = 1 }
