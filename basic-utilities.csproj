@@ -28,4 +28,8 @@
     <PackageReference Include="System.Text.Json" Version="9.0.9" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\flex-json\flex-json.csproj" />
+  </ItemGroup>
+
 </Project>
