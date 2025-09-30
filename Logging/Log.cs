@@ -1,78 +1,71 @@
+using System.Reflection;
 using Maynard.Configuration;
+using Maynard.Diagnostics;
 using Maynard.Logging.Throttling;
 using Maynard.Time;
+using static Maynard.Logging.Severity;
 
 namespace Maynard.Logging;
 
 public static class Log
 {
+
     private static readonly Lock _door = new();
     internal static LogConfiguration Configuration { get; set; } = new();
 
     // No owner, data optional
-    public static async Task Verbose(string message, object data = null)
-        => await Validate(null, Severity.Verbose, message);
-    public static async Task Info(string message, object data = null)
-        => await Validate(null, Severity.Info, message);
-    public static async Task Warn(string message, object data = null)
-        => await Validate(null, Severity.Warn, message);
-    public static async Task Error(string message, object data = null)
-        => await Validate(null, Severity.Error, message);
-    public static async Task Critical(string message, object data = null)
-        => await Validate(null, Severity.Critical, message);
-    public static async Task Good(string message, object data = null)
-        => await Validate(null, Severity.Good, message);
+    public static async Task Good(string message, object data = null) => await Validate(null, Severity.Good, message, data, null);
+    public static async Task Verbose(string message, object data = null) => await Validate(null, Severity.Verbose, message, data, null);
+    public static async Task Info(string message, object data = null) => await Validate(null, Severity.Info, message, data, null);
+    public static async Task Warn(string message, object data = null) => await Validate(null, Severity.Warn, message, data, null);
+    public static async Task Error(string message, object data = null) => await Validate(null, Severity.Error, message, data, null);
+    public static async Task Alert(string message, object data = null) => await Validate(null, Severity.Alert, message, data, null);
     
     // No Owner, Exception provided
-    public static async Task Verbose(string message, Exception exception) 
-        => await Verbose(message, data: new { Exception = exception });
-    public static async Task Info(string message, Exception exception) 
-        => await Info(message, data: new { Exception = exception });
-    public static async Task Warn(string message, Exception exception) 
-        => await Warn(message, data: new { Exception = exception });
-    public static async Task Error(string message, Exception exception) 
-        => await Error(message, data: new { Exception = exception });
-    public static async Task Critical(string message, Exception exception) 
-        => await Critical(message, data: new { Exception = exception });
-    public static async Task Good(string message, Exception exception)
-        => await Good(message, data: new { Exception = exception });
+    public static async Task Good(string message, Exception exception) => await Validate(null, Severity.Good, message, null, exception);
+    public static async Task Verbose(string message, Exception exception) => await Validate(null, Severity.Verbose, message, null, exception);
+    public static async Task Info(string message, Exception exception) => await Validate(null, Severity.Info, message, null, exception);
+    public static async Task Warn(string message, Exception exception) => await Validate(null, Severity.Warn, message, null, exception);
+    public static async Task Error(string message, Exception exception) => await Validate(null, Severity.Error, message, null, exception);
+    public static async Task Alert(string message, Exception exception) => await Validate(null, Severity.Alert, message, null, exception);
     
     // Owner provided, Data optional
-    public static async Task Verbose<T>(T owner, string message, object data = null) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Verbose, message, data);
-    public static async Task Info<T>(T owner, string message, object data = null) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Info, message, data);
-    public static async Task Warn<T>(T owner, string message, object data = null) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Warn, message, data);
-    public static async Task Error<T>(T owner, string message, object data = null) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Error, message, data);
-    public static async Task Critical<T>(T owner, string message, object data = null) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Critical, message, data);
+    
     public static async Task Good<T>(T owner, string message, object data = null) where T : Enum
-        => await Validate(Convert.ToInt32(owner), Severity.Good, message, data);
+        => await Validate(Convert.ToInt32(owner), Severity.Good, message, data, null);
+    public static async Task Verbose<T>(T owner, string message, object data = null) where T : Enum 
+        => await Validate(Convert.ToInt32(owner), Severity.Verbose, message, data, null);
+    public static async Task Info<T>(T owner, string message, object data = null) where T : Enum 
+        => await Validate(Convert.ToInt32(owner), Severity.Info, message, data, null);
+    public static async Task Warn<T>(T owner, string message, object data = null) where T : Enum 
+        => await Validate(Convert.ToInt32(owner), Severity.Warn, message, data, null);
+    public static async Task Error<T>(T owner, string message, object data = null) where T : Enum 
+        => await Validate(Convert.ToInt32(owner), Severity.Error, message, data, null);
+    public static async Task Alert<T>(T owner, string message, object data = null) where T : Enum 
+        => await Validate(Convert.ToInt32(owner), Severity.Alert, message, data, null);
     
     // Owner & Exception provided
+    public static async Task Good<T>(T owner, string message, Exception exception) where T : Enum 
+        => await Validate(Convert.ToInt32(owner), Severity.Good, message, null, exception);
     public static async Task Verbose<T>(T owner, string message, Exception exception) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Verbose, message, data: new { Exception = exception });
+        => await Validate(Convert.ToInt32(owner), Severity.Verbose, message, null, exception);
     public static async Task Info<T>(T owner, string message, Exception exception) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Info, message, data: new { Exception = exception });
+        => await Validate(Convert.ToInt32(owner), Severity.Info, message, null, exception);
     public static async Task Warn<T>(T owner, string message, Exception exception) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Warn, message, data: new { Exception = exception });
+        => await Validate(Convert.ToInt32(owner), Severity.Warn, message, null, exception);
     public static async Task Error<T>(T owner, string message, Exception exception) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Error, message, data: new { Exception = exception });
-    public static async Task Critical<T>(T owner, string message, Exception exception) where T : Enum 
-        => await Validate(Convert.ToInt32(owner), Severity.Critical, message, data: new { Exception = exception });
-    public static async Task Good<T>(T owner, string message, Exception exception) where T : Enum
-        => await Validate(Convert.ToInt32(owner), Severity.Good, message, data: new { Exception = exception });
+        => await Validate(Convert.ToInt32(owner), Severity.Error, message, null, exception);
+    public static async Task Alert<T>(T owner, string message, Exception exception) where T : Enum 
+        => await Validate(Convert.ToInt32(owner), Severity.Alert, message, null, exception);
+    
 
-    // TODO: data should be FlexJson equivalent
-    private static async Task Validate(int? ownerId, Severity severity, string message, object data = null)
+    private static async Task Validate(int? ownerId, Severity severity, string message, object data, Exception exception)
     {
         ownerId ??= Configuration.DefaultOwner;
         
         if (!Configuration.UseThrottling)
         {
-            await Enqueue((int)ownerId, severity, message, data);
+            await Enqueue((int)ownerId, severity, message, data, exception);
             return;
         }
         
@@ -84,7 +77,7 @@ public static class Log
                     message = $"{message} [Suppressed {args.ObjectsSuppressed} times]"; // TODO: Add to data object, not message
                     goto case ThrottleStatus.NotSuppressed;
                 case ThrottleStatus.NotSuppressed:
-                    Task task = Enqueue((int)ownerId, severity, message, data);
+                    Task task = Enqueue((int)ownerId, severity, message, data, exception);
                     task.Wait();
                     break;
                 case ThrottleStatus.Suppressed:
@@ -94,7 +87,7 @@ public static class Log
         });
     }
 
-    private static async Task Enqueue(int ownerId, Severity severity, string message, object data = null)
+    private static async Task Enqueue(int ownerId, Severity severity, string message, object data, Exception exception)
     {
         LogData log = new()
         {
@@ -103,13 +96,14 @@ public static class Log
             Message = message,
             Timestamp = TimestampMs.Now,
             Data = data,
-            
+            Exception = exception,
+            ApplicationVersion = ReflectionHelper.ApplicationVersion,
+            LibraryVersion = ReflectionHelper.LibraryVersion,
             // TODO
-            ApplicationVersion = null,
-            LibraryVersion = null,
             Url = null,
             TokenInfo = null,
         };
+        
         if (!Configuration.IsConfigured)
         {
             lock (_door)
@@ -147,12 +141,11 @@ public static class Log
         ConsoleColor previousBg = Console.BackgroundColor;
         ConsoleColor color = log.Severity switch
         {
+            Severity.Good => ConsoleColor.Green,
             Severity.Verbose => ConsoleColor.Gray,
             Severity.Info => ConsoleColor.Black,
             Severity.Warn => ConsoleColor.Yellow,
-            Severity.Error => ConsoleColor.Red,
-            Severity.Critical => ConsoleColor.Red,
-            Severity.Good => ConsoleColor.Green,
+            Severity.Error or Severity.Alert => ConsoleColor.Red,
             _ => ConsoleColor.White
         };
 

@@ -14,9 +14,10 @@ public struct LogData
     public long Timestamp { get; set; }
     public string Url { get; set; }
     public object Data { get; set; }
-    public Version ApplicationVersion { get; set; }
-    public Version LibraryVersion { get; set; }
+    public string ApplicationVersion { get; set; }
+    public string LibraryVersion { get; set; }
     public int OwnerId { get; set; }
+    public Exception Exception { get; set; }
 
     private string OwnerName => Log.Configuration.OwnerNames.TryGetValue(OwnerId, out string name)
         ? name

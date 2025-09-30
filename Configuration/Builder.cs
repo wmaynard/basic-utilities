@@ -11,7 +11,7 @@ public abstract class Builder
     {
         if (!string.IsNullOrWhiteSpace(caller) && !CalledMethods.Add(caller))
         {
-            Log.Critical("Configuration builder method already called!  Each method can only be called once.  Subsequent calls are ignored.", new
+            Log.Alert("Configuration builder method already called!  Each method can only be called once.  Subsequent calls are ignored.", new
             {
                 Method = caller
             }).Wait();

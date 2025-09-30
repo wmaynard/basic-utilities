@@ -1,5 +1,4 @@
 using Maynard.ErrorHandling;
-using Maynard.Tools.Extensions;
 
 namespace Maynard.Extensions;
 
