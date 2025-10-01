@@ -2,7 +2,7 @@ namespace Maynard.Logging;
 
 public enum Severity
 {
-    Good = 0,
+    Good = 100,
     Verbose = 10,
     Info = 20,
     Warn = 30,

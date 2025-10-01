@@ -64,7 +64,7 @@ public static class EnumExtension
     /// <summary>
     /// Returns an enum with every flag set.
     /// </summary>
-    internal static T FullSet<T>(this T flags) where T : Enum
+    public static T FullSet<T>(this T flags) where T : Enum
     {
         T[] all = flags.All();
         switch (all.Length)

@@ -7,7 +7,7 @@ namespace Maynard.Extensions;
 
 public static class WebApplicationExtension
 {
-    public static WebApplication ConfigureMaynardTools(this WebApplication app, Action<PackageConfigurationBuilder> builder)
+    public static WebApplication ConfigureMaynardTools(this WebApplication app, Action<Configuration.MaynardConfigurationBuilder> builder)
     {
         FlexJson.Configure(logEvent =>
         {
@@ -24,6 +24,10 @@ public static class WebApplicationExtension
         });
         Log.Verbose("FlexJson log events captured and tied to logging.");
         builder.Invoke(new());
+        
+        if (ServiceCollectionExtension.InitializeSingletons(app.Services) == 0)
+            Log.Warn("No singletons were initialized; ensure you've called builder.Services.AddMaynardTools() before configuring your app.");
+        
         Log.Good("Maynard Tools configured successfully!");
         return app;
     }

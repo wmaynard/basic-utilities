@@ -144,6 +144,8 @@ public static class Log
 
     private static void PrettyPrintToConsole(LogData log)
     {
+        if (Configuration.MinimumSeverity > log.Severity)
+            return;
         ConsoleColor previous = Console.ForegroundColor;
         ConsoleColor previousBg = Console.BackgroundColor;
         ConsoleColor color = log.Severity switch
@@ -160,7 +162,7 @@ public static class Log
         {
             Console.ForegroundColor = color;
             if (log.Severity == Severity.Verbose)
-                Console.BackgroundColor = ConsoleColor.DarkYellow;
+                Console.BackgroundColor = ConsoleColor.DarkGray;
             Console.WriteLine(log);
             Console.ForegroundColor = previous;
             Console.BackgroundColor = previousBg;

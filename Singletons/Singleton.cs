@@ -1,0 +1,146 @@
+using Maynard.Auth;
+
+namespace Maynard.Singletons;
+
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Reflection;
+using Maynard.Json;
+using Maynard.Logging;
+using Microsoft.AspNetCore.Http;
+
+public abstract class Singleton : ISingleton
+{
+    public static ConcurrentDictionary<Type, ISingleton> Registry { get; private set; }
+    
+    private IServiceProvider _services;
+    public string Name => GetType().Name;
+
+    protected Singleton(IServiceProvider services = null)
+    {
+        Registry ??= new ConcurrentDictionary<Type, ISingleton>();
+        if (Registry.ContainsKey(GetType()))
+            Registry[GetType()] = this;
+        else if (!Registry.TryAdd(GetType(), this))
+            Log.Warn("Failed to add an entry to the service registry", data: new
+            {
+                Type = GetType()
+            });
+
+        Log.Verbose($"Creating {GetType().Name}");
+    }
+
+    // TODO: This is the same code as in PlatformController's service resolution.
+    public bool ResolveServices(IServiceProvider services = null)
+    {
+        _services = services ?? new HttpContextAccessor().HttpContext?.RequestServices;
+
+        if (_services == null)
+            return false; 
+
+        foreach (PropertyInfo info in GetType().GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+            if (info.PropertyType.IsAssignableTo(typeof(Singleton)))
+                try
+                {
+                    info.SetValue(this, _services.GetService(info.PropertyType));
+                }
+                catch (Exception e)
+                {
+                    Log.Error($"Unable to retrieve {info.PropertyType.Name}.", exception: e);
+                }
+        foreach (FieldInfo info in GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+            if (info.FieldType.IsAssignableTo(typeof(Singleton)))
+                try
+                {
+                    info.SetValue(this, _services.GetService(info.FieldType));
+                }
+                catch (Exception e)
+                {
+                    Log.Error($"Unable to retrieve {info.FieldType.Name}.", exception: e);
+                }
+        return true;
+    }
+
+    public void OnDestroy() {}
+
+    /// <summary>
+    /// Allows a roundabout way of accessing a service.  There are edge cases where a developer
+    /// can't use dependency injection (the cleaner approach).  This should be used sparingly
+    /// and only within Platform Common to discourage its use elsewhere.
+    /// </summary>
+    internal static bool Get<T>(out T service) where T : Singleton
+    {
+        if (Registry == null)
+        {
+            service = null;
+            return false;
+        }
+        bool output = Registry.TryGetValue(typeof(T), out ISingleton svc);
+        service = (T)svc;
+
+        return output;
+    }
+
+    public static T Require<T>() where T : Singleton => Optional<T>() ?? throw new Exception($"Service not found {typeof(T).Name}");
+
+    public static T Optional<T>() where T : Singleton
+    {
+        if (Registry == null)
+            return null;
+        Registry.TryGetValue(typeof(T), out ISingleton svc);
+        return (T)svc;
+    }
+
+    public virtual FlexJson HealthStatus => new FlexJson
+    {
+        { Name, "unimplemented" }
+    };
+
+    internal static FlexJson ProcessGdprRequest(TokenInfo token)
+    {
+        FlexJson output = new FlexJson();
+        long totalAffected = 0;
+        
+        if (token == null)
+        {
+            Log.Warn("A GDPR request came in with no PII to identify records.");
+            return output;
+        }
+
+        string dummyText = $"pii_removed_{Guid.NewGuid().ToString()}";
+        foreach (IGdprHandler service in Registry.Values.OfType<IGdprHandler>())
+        {
+            string name = service.GetType().Name ?? "unknown service";
+
+            long affected = 0;
+            try
+            {
+                affected = service.ProcessGdprRequest(token.AccountId, dummyText);
+            }
+            catch (Exception e)
+            {
+                Log.Error("An exception was thrown during a GDPR request; investigation needed.", data: new
+                {
+                    Service = name,
+                    Token = token
+                }, exception: e);
+            }
+
+            #if DEBUG
+            output[name] = affected;
+            #endif
+            totalAffected += affected;
+        }
+        
+        if (totalAffected <= 0)
+            Log.Warn("A PII deletion request came in, but no records were affected; investigation needed.", data: new
+            {
+                Token = token
+            });
+
+        output["affectedDocuments"] = totalAffected;
+
+        return output;
+    }
+}
