@@ -68,6 +68,8 @@ public static class Log
 
     private static async Task Validate(int? ownerId, Severity severity, string message, object data, Exception exception)
     {
+        if (Configuration.IsDisabled)
+            return;
         ownerId ??= Configuration.DefaultOwner;
         
         if (!Configuration.UseThrottling)
@@ -187,11 +189,18 @@ public static class Log
 
     internal static async Task FlushStartupLogs()
     {
-        Console.WriteLine(Configuration.RerouteLogs
-            ? "Console logs are disabled; logs have been configured to pipe to a different handler."
-            : LogData.GetHeaders()
-        );
+        if (!Configuration.RerouteLogs)
+            Console.WriteLine(LogData.GetHeaders());
         await Flush();
+    }
+
+    internal static async Task Disable()
+    {
+        Configuration.IsConfigured = true;
+        Configuration.IsDisabled = true;
+
+        lock (_Door)
+            Configuration.Queue.Clear();
     }
 }
 public enum Owner { Default = 0, Will = 1 }

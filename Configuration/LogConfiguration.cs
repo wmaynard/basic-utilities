@@ -26,4 +26,5 @@ internal class LogConfiguration
     internal bool DisableWrap { get; set; }
     internal TimestampDisplaySettings TimestampDisplaySetting { get; set; }
     internal bool IsConfigured { get; set; }
+    internal bool IsDisabled { get; set; }
 }

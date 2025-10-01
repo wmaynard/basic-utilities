@@ -1,3 +1,4 @@
+using System.Text;
 using Maynard.Configuration;
 using Maynard.Json;
 using Maynard.Logging;
@@ -23,7 +24,26 @@ public static class WebApplicationExtension
             }
         });
         Log.Verbose("FlexJson log events captured and tied to logging.");
-        builder.Invoke(new());
+        MaynardConfigurationBuilder config = new();
+        builder.Invoke(config);
+
+        if (!Log.Configuration.IsConfigured)
+        {
+            StringBuilder sb = new();
+            sb.Append("MaynardTools logging was not configured.  Logs will be rerouted to Console for debug builds and ignored during release builds.");
+            sb.Append(Environment.NewLine);
+            sb.Append($"To clean up these console messages, call the extension method {nameof(config.ConfigureLogging)}() from the MaynardConfigurationBuilder method chain.");
+            sb.Append(Environment.NewLine);
+            sb.Append(Environment.NewLine);
+            
+            Console.WriteLine(sb.ToString());
+            #if DEBUG
+            config.ConfigureLogging(logs => logs.RerouteIndividualLogs((_, log) => Console.WriteLine($"{log.Severity} {log.Message}")));
+            _ = Log.FlushStartupLogs();
+            #elif RELEASE
+            Log.Disable();
+            #endif
+        }
         
         if (ServiceCollectionExtension.InitializeSingletons(app.Services) == 0)
             Log.Warn("No singletons were initialized; ensure you've called builder.Services.AddMaynardTools() before configuring your app.");
