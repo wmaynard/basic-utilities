@@ -1,12 +1,16 @@
 using System.Text;
+using System.Text.Json;
 using Maynard.Auth;
+using Maynard.Configuration;
 using Maynard.ErrorHandling;
+using Maynard.Json.Utilities;
+using Maynard.Text;
 using Maynard.Time;
 using Maynard.Tools.Extensions;
 
 namespace Maynard.Logging;
 
-public struct LogData
+public class LogData
 {
     public Severity Severity { get; set; }
     public string Message { get; set; }
@@ -25,36 +29,26 @@ public struct LogData
 
     private static readonly int _lengthOwner = Math.Max(5, Log.Configuration.OwnerNames.Values.Max(name => name.Length));
     private static readonly int _lengthSeverity = Enum.GetNames<Severity>().Max(name => name.Length);
-    private const int LENGTH_MESSAGE = 80;
+    private const int LENGTH_MESSAGE = 150;
 
-    internal static string GetHeaders()
-    {
-        const int TIMEZONE_LENGTH = 6;
-        int lengthTimestamp = Log.Configuration.TimestampDisplaySetting switch
-        {
-            TimestampDisplaySettings.DateTimeLocal => DATETIME_FORMAT.Length + TIMEZONE_LENGTH,
-            TimestampDisplaySettings.DateTimeUtc => DATETIME_FORMAT.Length + TIMEZONE_LENGTH,
-            TimestampDisplaySettings.TimeLocal => TIME_FORMAT.Length + TIMEZONE_LENGTH,
-            TimestampDisplaySettings.TimeUtc => TIME_FORMAT.Length + TIMEZONE_LENGTH,
-            TimestampDisplaySettings.UnixTimestamp => 10,
-            TimestampDisplaySettings.UnixTimestampMs => 13,
-            _ => throw new InternalException("Enum value was out of bounds", ErrorCode.EnumOutOfBounds, data: new { Type = typeof(TimestampDisplaySettings).FullName })
-        };
-        StringBuilder builder = new();
-        builder.Append("Timestamp".PadRight(lengthTimestamp));
-        builder.Append(" | ");
-        builder.Append("Owner".PadLeft(_lengthOwner));
-        builder.Append(" | ");
-        builder.Append("Severity".PadLeft(_lengthSeverity));
-        builder.Append(" | ");
-        builder.Append("Message\n");
-        builder.Append("".PadRight(builder.Length + 80, '-'));
-        
-        return builder.ToString();
-    }
+    internal static string GetHeaders() => new TableBuilder()
+        .Cell(LogConfiguration.PrintingConfiguration.HEADER_TIMESTAMP, Log.Configuration.Printing.LengthTimestampColumn)
+        .VerticalLine(BoxDrawing.LineStyle.Heavy)
+        .Cell(LogConfiguration.PrintingConfiguration.HEADER_OWNER, Log.Configuration.Printing.LengthOwnerColumn)
+        .VerticalLine(BoxDrawing.LineStyle.Heavy)
+        .Cell(LogConfiguration.PrintingConfiguration.HEADER_SEVERITY, Log.Configuration.Printing.LengthSeverityColumn)
+        .VerticalLine(BoxDrawing.LineStyle.Heavy)
+        .Cell(LogConfiguration.PrintingConfiguration.HEADER_MESSAGE, Log.Configuration.Printing.LengthMessageColumn)
+        .NewLine()
+        .HorizontalLine(BoxDrawing.LineStyle.Heavy, Log.Configuration.Printing.LengthTimestampColumn)
+        .Cross(BoxDrawing.SolidStyle.LightAndHeavyMixed, BoxDrawing.Direction.Up | BoxDrawing.Direction.Left | BoxDrawing.Direction.Right)
+        .HorizontalLine(BoxDrawing.LineStyle.Heavy, Log.Configuration.Printing.LengthOwnerColumn)
+        .Cross(BoxDrawing.SolidStyle.LightAndHeavyMixed, BoxDrawing.Direction.Up | BoxDrawing.Direction.Left | BoxDrawing.Direction.Right)
+        .HorizontalLine(BoxDrawing.LineStyle.Heavy, Log.Configuration.Printing.LengthSeverityColumn)
+        .Cross(BoxDrawing.SolidStyle.LightAndHeavyMixed, BoxDrawing.Direction.Up | BoxDrawing.Direction.Left | BoxDrawing.Direction.Right)
+        .HorizontalLine(BoxDrawing.LineStyle.Heavy, Log.Configuration.Printing.LengthMessageColumn);
     
-    private const string DATETIME_FORMAT = "yyyy.MM.dd HH:mm:ss.fff";
-    private const string TIME_FORMAT = "HH:mm:ss.fff";
+    
     
     // Timestamp | Owner | Severity | Message
     // 
@@ -62,52 +56,126 @@ public struct LogData
     //                                Continued message here, can be disabled with DisableLineWrap()
     public override string ToString()
     {
-        StringBuilder builder = new();
-        DateTime time = TimestampMs.ToDateTime(Timestamp);
-
-        builder.Append(Log.Configuration.TimestampDisplaySetting switch
+        void AddNonMessage(ref TableBuilder builder, string timestamp = "", string owner = "", string severity = "")
         {
-            TimestampDisplaySettings.DateTimeLocal => $"[{time.GetLocalTimezoneAbbreviation()}] " + time.ToLocalTime().ToString(DATETIME_FORMAT),
-            TimestampDisplaySettings.DateTimeUtc =>  "[UTC] " + time.ToString(DATETIME_FORMAT),
-            TimestampDisplaySettings.TimeLocal => $"[{time.GetLocalTimezoneAbbreviation()}] " + time.ToLocalTime().ToString(TIME_FORMAT),
-            TimestampDisplaySettings.TimeUtc => "[UTC] " + time.ToString(TIME_FORMAT),
-            TimestampDisplaySettings.UnixTimestamp => Timestamp / 1_000,
-            TimestampDisplaySettings.UnixTimestampMs => Timestamp,
-            _ => throw new InternalException("Enum value was out of bounds", ErrorCode.EnumOutOfBounds, data: new { Type = typeof(TimestampDisplaySettings).FullName })
-        });
-        builder.Append(" | ");
-        builder.Append(OwnerName.PadLeft(_lengthOwner));
-        builder.Append(" | ");
-        builder.Append(Severity.ToString().ToUpper().PadLeft(_lengthSeverity));
-
-        if (Log.Configuration.DisableWrap || Message.Length <= LENGTH_MESSAGE)
-        {
-            builder.Append(" | ");
-            builder.Append(Message);
+            BoxDrawing.LineStyle style = string.IsNullOrWhiteSpace(timestamp) ? BoxDrawing.LineStyle.Dashes : BoxDrawing.LineStyle.Light;
+            builder
+                .Cell(timestamp, Log.Configuration.Printing.LengthTimestampColumn)
+                .VerticalLine(style)
+                .Cell(owner, Log.Configuration.Printing.LengthOwnerColumn)
+                .VerticalLine(style)
+                .Cell(severity, Log.Configuration.Printing.LengthSeverityColumn);
         }
+
+        void AddIndentedMessageTitle(ref TableBuilder builder, string message, bool isFirstIndent = false, bool hasMoreLines = true, bool isFinal = false)
+        {
+            builder.NewLine();
+            AddNonMessage(ref builder);
+            if (isFirstIndent) // The first line should branch off the table.
+            {
+                builder.Corner(BoxDrawing.CornerType.BottomLeft, BoxDrawing.SolidStyle.Light);
+
+                if (hasMoreLines) //  └──┬── Some Message
+                    builder
+                        .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
+                        .Tee(BoxDrawing.TeeType.FacingDown, BoxDrawing.SolidStyle.Light)
+                        .HorizontalLine(BoxDrawing.LineStyle.Light, 2);
+                else //  └───── Some Message
+                    builder.HorizontalLine(BoxDrawing.LineStyle.Light, 5);
+
+                builder
+                    .Space()
+                    .Append(message);
+            }
+            else
+                builder
+                    .Space(3)
+                    .Tee(BoxDrawing.TeeType.FacingRight, BoxDrawing.SolidStyle.Light)
+                    .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
+                    .Space()
+                    .Append(message);
+
+            if (!hasMoreLines)
+                builder.NewLine(2);
+        }
+
+        void AddIndentedMessageLine(ref TableBuilder builder, string line, bool returnIndent = false)
+        {
+            builder.NewLine();
+            AddNonMessage(ref builder);
+            
+            if (!returnIndent)
+                builder
+                    .Space(3)
+                    .VerticalLine(BoxDrawing.LineStyle.Light);
+            else
+                builder
+                    .Corner(BoxDrawing.CornerType.TopLeft, BoxDrawing.SolidStyle.Light)
+                    .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
+                    .Corner(BoxDrawing.CornerType.BottomRight, BoxDrawing.SolidStyle.Light);
+            builder
+                .Space()
+                .Append(line);
+        }
+
+        void AppendExtra(ref TableBuilder builder, object extra, bool returnIndent = false)
+        {
+            Queue<string> lines = new(JsonSerializer
+                .Serialize(extra, JsonHelper.PrettyPrintingOptions)
+                .Split(Environment.NewLine));
+            AddIndentedMessageTitle(ref builder, extra is Exception ? "Exception Detail" : "Log Data", !returnIndent, lines.Count > 1);
+            
+            while (lines.TryDequeue(out string line))
+                AddIndentedMessageLine(ref builder, line, returnIndent: returnIndent && lines.Count == 0);
+        }
+        
+        
+        TableBuilder builder = new();
+        
+        AddNonMessage(ref builder, Log.Configuration.Printing.TimestampToString(Timestamp), OwnerName, Severity.ToString().ToUpper());
+        builder
+            .VerticalLine(BoxDrawing.LineStyle.Light)
+            .Space();
+        
+        // If the log is short or wrap is disabled, simply add it to our output.
+        if (Log.Configuration.DisableWrap || Message.Length <= Log.Configuration.Printing.LengthMessageColumn)
+            builder.Append(Message);
+        // The log is too long and we need to wrap the words for printing.
         else
         {
-            builder.Append(" |");
             Queue<string> words = new(Message.Split(' '));
             int length = 0;
-            int messageColumnStart = builder.Length;
             bool wordAdded = false;
             while (words.TryDequeue(out string word))
             {
-                if (length + word.Length + 1 > LENGTH_MESSAGE && wordAdded)
+                if (length + word.Length + 1 > Log.Configuration.Printing.LengthMessageColumn && wordAdded)
                 {
-                    builder.Append(Environment.NewLine);
-                    builder.Append(new string(' ', messageColumnStart - 1));
-                    builder.Append('|');
-                    length = 0;
+                    builder.NewLine();
+                    AddNonMessage(ref builder);
+                    builder
+                        .VerticalLine(BoxDrawing.LineStyle.Light)
+                        .Space();
                 }
-                builder.Append(' ');
-                builder.Append(word);
+
+                builder
+                    .Space()
+                    .Append(word);
                 length += word.Length + 1;
                 wordAdded = true;
             }
         }
         
-        return builder.ToString();
+        if (Severity < Log.Configuration.MinimumExtraSeverity || (Data ?? Exception) == null)
+            return builder;
+        bool printData = Data != null && Log.Configuration.Printing.PrintData;
+        if (printData)
+            AppendExtra(ref builder, Data, returnIndent: Exception == null);
+        if (Exception != null && Log.Configuration.Printing.PrintExceptions)
+            AppendExtra(ref builder, Exception, printData);
+        
+        return builder;
     }
+
+
 }
+

@@ -93,4 +93,6 @@ public static class EnumExtension
 
         return att?.Name ?? obj.ToString();
     }
+
+    public static bool IsDefault<T>(this T obj) where T : Enum => obj.AsInt() == 0;
 }

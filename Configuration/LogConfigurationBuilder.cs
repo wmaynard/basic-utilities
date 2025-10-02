@@ -79,6 +79,7 @@ public class LogConfigurationBuilder : Builder
             .Zip(names, (value, name) => new { value, name })
             .ToDictionary(x => x.value, x => x.name);
         Log.Configuration.DefaultOwner = (int)defaultOwner;
+        Log.Configuration.Printing.LengthOwnerColumn = names.Max(name => name.Length);
     });
 
     public LogConfigurationBuilder AssignOwners(Type type) => AssignOwners(type, null);
@@ -110,7 +111,13 @@ public class LogConfigurationBuilder : Builder
     public LogConfigurationBuilder SetTimestampDisplay(TimestampDisplaySettings setting) => OnceOnly<LogConfigurationBuilder>(() =>
     {
         setting.Validate();
-        Log.Configuration.TimestampDisplaySetting = setting;
+        Log.Configuration.Printing.TimestampDisplaySetting = setting;
+        Log.Configuration.Printing.LengthTimestampColumn = Log.Configuration.Printing.TimestampToString(TimestampMs.Now).Length + 6; // Timezone display takes 6 characters, e.g. "[UTC] ".
+    });
+    
+    public LogConfigurationBuilder PrintExtras(Severity forSeverities, bool printData = true, bool printExceptions = true) => OnceOnly<LogConfigurationBuilder>(() =>
+    {
+        Log.Configuration.Printing.PrintData = printData;
+        Log.Configuration.Printing.PrintExceptions = printExceptions;
     });
 }
-

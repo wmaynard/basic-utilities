@@ -16,6 +16,7 @@ public class MaynardConfigurationBuilder : Builder
     public MaynardConfigurationBuilder ConfigureLogging(Action<LogConfigurationBuilder> logs) => OnceOnly<MaynardConfigurationBuilder>(() =>
     {
         logs.Invoke(new());
+        Log.Configuration.Printing.Validate();
         Log.Configuration.IsConfigured = true;
         Log.FlushStartupLogs().Wait();
         Log.Good("Logging configured successfully!");

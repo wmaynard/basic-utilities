@@ -8,4 +8,5 @@ internal enum ErrorCode
     DependencyInjectionFailure = 1_300,
     DatabaseFailure = 1_400,
     ConnectionFailure = 1_500,
+    InvalidValue = 1_600
 }

@@ -1,3 +1,5 @@
+using Maynard.Json.Attributes;
+
 namespace Maynard.Auth;
 
 using System;
@@ -52,16 +54,8 @@ public class TokenInfo : Model
 
     [BsonIgnore]
     [JsonIgnore]
+    [FlexIgnore]
     public string Authorization { get; set; }
-
-    /// <summary>
-    /// Alias for AccountId, comes back in JSON responses as "aid", which is a relic from Groovy days.  The new standard is
-    /// "accountId" for readability and clarity.
-    /// </summary>
-    [Obsolete("Use AccountId instead.  AccountIdLegacy is only for API consumers / JSON serialization.")]
-    [BsonIgnore]
-    [JsonInclude, JsonPropertyName("aid"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string AccountIdLegacy => AccountId;
 
     [BsonElement(DB_KEY_ACCOUNT_ID)]
     [JsonInclude, JsonPropertyName(FRIENDLY_KEY_ACCOUNT_ID), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
