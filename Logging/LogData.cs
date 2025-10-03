@@ -56,84 +56,8 @@ public class LogData
     //                                Continued message here, can be disabled with DisableLineWrap()
     public override string ToString()
     {
-        void AddNonMessage(ref TableBuilder builder, string timestamp = "", string owner = "", string severity = "")
-        {
-            BoxDrawing.LineStyle style = string.IsNullOrWhiteSpace(timestamp) ? BoxDrawing.LineStyle.Dashes : BoxDrawing.LineStyle.Light;
-            builder
-                .Cell(timestamp, Log.Configuration.Printing.LengthTimestampColumn)
-                .VerticalLine(style)
-                .Cell(owner, Log.Configuration.Printing.LengthOwnerColumn)
-                .VerticalLine(style)
-                .Cell(severity, Log.Configuration.Printing.LengthSeverityColumn);
-        }
-
-        void AddIndentedMessageTitle(ref TableBuilder builder, string message, bool isFirstIndent = false, bool hasMoreLines = true, bool isFinal = false)
-        {
-            builder.NewLine();
-            AddNonMessage(ref builder);
-            if (isFirstIndent) // The first line should branch off the table.
-            {
-                builder.Corner(BoxDrawing.CornerType.BottomLeft, BoxDrawing.SolidStyle.Light);
-
-                if (hasMoreLines) //  └──┬── Some Message
-                    builder
-                        .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
-                        .Tee(BoxDrawing.TeeType.FacingDown, BoxDrawing.SolidStyle.Light)
-                        .HorizontalLine(BoxDrawing.LineStyle.Light, 2);
-                else //  └───── Some Message
-                    builder.HorizontalLine(BoxDrawing.LineStyle.Light, 5);
-
-                builder
-                    .Space()
-                    .Append(message);
-            }
-            else
-                builder
-                    .Space(3)
-                    .Tee(BoxDrawing.TeeType.FacingRight, BoxDrawing.SolidStyle.Light)
-                    .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
-                    .Space()
-                    .Append(message);
-
-            if (!hasMoreLines)
-                builder.NewLine(2);
-        }
-
-        void AddIndentedMessageLine(ref TableBuilder builder, string line, bool returnIndent = false)
-        {
-            builder.NewLine();
-            AddNonMessage(ref builder);
-            
-            if (!returnIndent)
-                builder
-                    .Space(3)
-                    .VerticalLine(BoxDrawing.LineStyle.Light);
-            else
-                builder
-                    .Corner(BoxDrawing.CornerType.TopLeft, BoxDrawing.SolidStyle.Light)
-                    .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
-                    .Corner(BoxDrawing.CornerType.BottomRight, BoxDrawing.SolidStyle.Light);
-            builder
-                .Space()
-                .Append(line);
-        }
-
-        void AppendExtra(ref TableBuilder builder, object extra, bool returnIndent = false)
-        {
-            Queue<string> lines = new(JsonSerializer
-                .Serialize(extra, JsonHelper.PrettyPrintingOptions)
-                .Split(Environment.NewLine));
-            AddIndentedMessageTitle(ref builder, extra is Exception ? "Exception Detail" : "Log Data", !returnIndent, lines.Count > 1);
-            
-            while (lines.TryDequeue(out string line))
-                AddIndentedMessageLine(ref builder, line, returnIndent: returnIndent && lines.Count == 0);
-        }
-        
-        
-        TableBuilder builder = new();
-        
-        AddNonMessage(ref builder, Log.Configuration.Printing.TimestampToString(Timestamp), OwnerName, Severity.ToString().ToUpper());
-        builder
+        TableBuilder builder = new TableBuilder()
+            .AppendLogUntilMessage(Log.Configuration.Printing.TimestampToString(Timestamp), OwnerName, Severity.ToString().ToUpper())
             .VerticalLine(BoxDrawing.LineStyle.Light)
             .Space();
         
@@ -149,14 +73,11 @@ public class LogData
             while (words.TryDequeue(out string word))
             {
                 if (length + word.Length + 1 > Log.Configuration.Printing.LengthMessageColumn && wordAdded)
-                {
-                    builder.NewLine();
-                    AddNonMessage(ref builder);
                     builder
+                        .NewLine()
+                        .AppendLogUntilMessage()
                         .VerticalLine(BoxDrawing.LineStyle.Light)
                         .Space();
-                }
-
                 builder
                     .Space()
                     .Append(word);
@@ -169,9 +90,9 @@ public class LogData
             return builder;
         bool printData = Data != null && Log.Configuration.Printing.PrintData;
         if (printData)
-            AppendExtra(ref builder, Data, returnIndent: Exception == null);
+            builder.AppendIndentedLogExtra(Data, returnIndent: Exception == null);
         if (Exception != null && Log.Configuration.Printing.PrintExceptions)
-            AppendExtra(ref builder, Exception, printData);
+            builder.AppendIndentedLogExtra(Exception, printData);
         
         return builder;
     }
@@ -179,3 +100,80 @@ public class LogData
 
 }
 
+internal static class TableBuilderExtension
+{
+    internal static TableBuilder AppendIndentedLogTitle(this TableBuilder builder, string message, bool isFirstIndent = false, bool hasMoreLines = true, bool isFinal = false)
+    {
+        builder
+            .NewLine()
+            .AppendLogUntilMessage();
+        if (isFirstIndent) // The first line should branch off the table.
+        {
+            builder.Corner(BoxDrawing.CornerType.BottomLeft, BoxDrawing.SolidStyle.Light);
+
+            if (hasMoreLines) //  └──┬── Some Message
+                builder
+                    .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
+                    .Tee(BoxDrawing.TeeType.FacingDown, BoxDrawing.SolidStyle.Light)
+                    .HorizontalLine(BoxDrawing.LineStyle.Light, 2);
+            else //  └───── Some Message
+                builder.HorizontalLine(BoxDrawing.LineStyle.Light, 5);
+
+            builder
+                .Space()
+                .Append(message);
+        }
+        else
+            builder
+                .Space(3)
+                .Tee(BoxDrawing.TeeType.FacingRight, BoxDrawing.SolidStyle.Light)
+                .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
+                .Space()
+                .Append(message);
+
+        if (!hasMoreLines)
+            builder.NewLine(2);
+        return builder;
+    }
+    internal static TableBuilder AppendLogUntilMessage(this TableBuilder builder, string timestamp = "", string owner = "", string severity = "")
+    {
+        BoxDrawing.LineStyle style = string.IsNullOrWhiteSpace(timestamp) ? BoxDrawing.LineStyle.Dashes : BoxDrawing.LineStyle.Light;
+        return builder
+            .Cell(timestamp, Log.Configuration.Printing.LengthTimestampColumn)
+            .VerticalLine(style)
+            .Cell(owner, Log.Configuration.Printing.LengthOwnerColumn)
+            .VerticalLine(style)
+            .Cell(severity, Log.Configuration.Printing.LengthSeverityColumn);
+    }
+    internal static TableBuilder AppendIndentedLogMessageLine(this TableBuilder builder, string line, bool returnIndent)
+    {
+        builder
+            .NewLine()
+            .AppendLogUntilMessage();
+            
+        if (!returnIndent)
+            builder
+                .Space(3)
+                .VerticalLine(BoxDrawing.LineStyle.Light);
+        else
+            builder
+                .Corner(BoxDrawing.CornerType.TopLeft, BoxDrawing.SolidStyle.Light)
+                .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
+                .Corner(BoxDrawing.CornerType.BottomRight, BoxDrawing.SolidStyle.Light);
+        return builder
+            .Space()
+            .Append(line);
+    }
+    
+    internal static TableBuilder AppendIndentedLogExtra(this TableBuilder builder, object extra, bool returnIndent = false)
+    {
+        Queue<string> lines = new(JsonSerializer
+            .Serialize(extra, JsonHelper.PrettyPrintingOptions)
+            .Split(Environment.NewLine));
+        builder.AppendIndentedLogTitle(extra is Exception ? "Exception Detail" : "Log Data", !returnIndent, lines.Count > 1);
+            
+        while (lines.TryDequeue(out string line))
+            builder.AppendIndentedLogMessageLine(line, returnIndent: returnIndent && lines.Count == 0);
+        return builder;
+    }
+}
