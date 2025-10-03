@@ -8,5 +8,8 @@ internal enum ErrorCode
     DependencyInjectionFailure = 1_300,
     DatabaseFailure = 1_400,
     ConnectionFailure = 1_500,
-    InvalidValue = 1_600
+    InvalidValue = 1_600,
+    NotConfigured = 1_700,
+    ExpiredToken = 1_800,
+    InvalidToken = 1_900,
 }

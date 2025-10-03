@@ -1,4 +1,5 @@
 using Maynard.Json.Attributes;
+using Maynard.Time;
 
 namespace Maynard.Auth;
 
@@ -10,118 +11,60 @@ using MongoDB.Bson.Serialization.Attributes;
 [BsonIgnoreExtraElements]
 public class TokenInfo : Model
 {
-    private string[] _audiences;
+    //
     
-    public const int CACHE_EXPIRATION = 900_000; // 15 minutes
-    public const string KEY_TOKEN_OUTPUT = "token";
-    public const string KEY_TOKEN_LEGACY_OUTPUT = "tokenInfo";
-        
-    public const string DB_KEY_ACCOUNT_ID = "aid";
-    public const string DB_KEY_AUDIENCE = "aud";
-    public const string DB_KEY_AUTHORIZATION = "auth";
-    public const string DB_KEY_COUNTRY_CODE = "cc";
-    public const string DB_KEY_DISCRIMINATOR = "d";
-    public const string DB_KEY_EMAIL_ADDRESS = "@";
-    public const string DB_KEY_EXPIRATION = "exp";
-    public const string DB_KEY_IS_ADMIN = "su";
-    public const string DB_KEY_ISSUED_AT = "iat";
-    public const string DB_KEY_ISSUER = "iss";
-    public const string DB_KEY_REQUESTER = "req";
-    public const string DB_KEY_SCREENNAME = "sn";
-    public const string DB_KEY_IP_ADDRESS = "ip";
-    public const string DB_KEY_GAME = "gkey";
-    public const string DB_KEY_PERMISSION_SET = "perm";
-
-    public const string FRIENDLY_KEY_ACCOUNT_ID = "accountId";
-    public const string FRIENDLY_KEY_AUDIENCE = "audience";
-    public const string FRIENDLY_KEY_COUNTRY_CODE = "country";
-    public const string FRIENDLY_KEY_DISCRIMINATOR = "discriminator";
-    public const string FRIENDLY_KEY_EMAIL_ADDRESS = "email";
-    public const string FRIENDLY_KEY_EXPIRATION = "expiration";
-    public const string FRIENDLY_KEY_IP_ADDRESS = "ip";
-    public const string FRIENDLY_KEY_IS_ADMIN = "isAdmin";
-    public const string FRIENDLY_KEY_ISSUED_AT = "issuedAt";
-    public const string FRIENDLY_KEY_ISSUER = "issuer";
-    public const string FRIENDLY_KEY_REQUESTER = "origin";
-    public const string FRIENDLY_KEY_SCREENNAME = "screenname";
-    public const string FRIENDLY_KEY_SECONDS_REMAINING = "secondsRemaining";
-    public const string FRIENDLY_KEY_USERNAME = "username";
-    public const string FRIENDLY_KEY_GAME = "game";
-    public const string FRIENDLY_KEY_PERMISSION_SET = "permissions";
     
-    // TODO: RequestComponent?  Something to track who requested the token?
-    // TODO: HasAccessTo(component) method, based on "aud"
-
-    [BsonIgnore]
-    [JsonIgnore]
     [FlexIgnore]
-    public string Authorization { get; set; }
+    public string RawJwt { get; set; }
 
-    [BsonElement(DB_KEY_ACCOUNT_ID)]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_ACCOUNT_ID), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [FlexKeys(json: "accountId", bson: "aid", Ignore.WhenNull)]
     public string AccountId { get; set; }
     
-    [BsonElement(DB_KEY_PERMISSION_SET)]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_PERMISSION_SET)]
+    [FlexKeys(json: "permissions", bson: "perm")]
     public int PermissionSet { get; set; }
 
-    [BsonElement(DB_KEY_DISCRIMINATOR)]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_DISCRIMINATOR), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [FlexKeys(json: "discriminator", bson: "d", Ignore.WhenDefault)]
     public int Discriminator { get; set; }
 
-    [BsonElement(DB_KEY_EMAIL_ADDRESS), BsonIgnoreIfNull]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_EMAIL_ADDRESS), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [FlexKeys(json: "email", bson: "@", Ignore.WhenNull)]
     public string Email { get; set; }
 
-    [BsonElement(DB_KEY_EXPIRATION)]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_EXPIRATION), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [FlexKeys(json: "expiration", bson: "exp", Ignore.WhenDefault)]
     public long Expiration { get; set; }
 
-    [BsonElement(DB_KEY_IP_ADDRESS), BsonIgnoreIfNull]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_IP_ADDRESS), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [FlexKeys(json: "ip", bson: "ip", Ignore.WhenNull)]
     public string IpAddress { get; set; }
 
-    [BsonElement(DB_KEY_COUNTRY_CODE), BsonIgnoreIfNull]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_COUNTRY_CODE), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [FlexKeys(json: "country", bson: "cc", Ignore.WhenNull)]
     public string CountryCode { get; set; }
 
-    [BsonElement(DB_KEY_ISSUED_AT)]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_ISSUED_AT), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [FlexKeys(json: "issuedAt", bson: "iat", Ignore.WhenDefault)]
     public long IssuedAt { get; set; }
 
-    [BsonElement(DB_KEY_ISSUER)]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_ISSUER), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [FlexKeys(json: "issuer", bson: "iss", Ignore.WhenNull)]
     public string Issuer { get; set; }
 
-    [BsonElement(DB_KEY_IS_ADMIN)]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_IS_ADMIN), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [FlexKeys(json: "isAdmin", bson: "su", Ignore.WhenDefault)]
     public bool IsAdmin { get; set; }
 
-    [BsonIgnore]
-    [JsonIgnore]
-    public bool IsNotAdmin => !IsAdmin;
+    [FlexKeys(json: "secondsRemaining", ignore: Ignore.InBson | Ignore.WhenDefault)]
+    public long SecondsRemaining => Math.Max(0, Expiration - Timestamp.Now);
+
+    [FlexKeys(json: "username", ignore: Ignore.InBson | Ignore.WhenNull)]
+    public string Username { get; set; }
+
+    [FlexIgnore]
+    public bool IsExpired => Expiration <= Timestamp.Now;
     
-    [BsonElement(DB_KEY_GAME)]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_GAME)]
-    public string GameKey { get; set; }
+    [FlexKeys(json: "jwtId", bson: "jti", Ignore.WhenNull)]
+    public string JwtId { get; set; }
     
-    [BsonElement(DB_KEY_REQUESTER)]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_REQUESTER), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string Requester { get; set; }
+    [FlexKeys(json: "audience", bson: "aud", Ignore.WhenNull)]
+    public string Audience { get; set; }
+    
+    [FlexKeys(json: "validFrom", bson: "nbf", Ignore.WhenDefault)]
+    public long ValidFrom { get; set; }
 
-    [BsonElement(DB_KEY_SCREENNAME)]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_SCREENNAME), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string ScreenName { get; set; }
-
-    [BsonIgnore]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_SECONDS_REMAINING), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public double SecondsRemaining { get; set; }
-
-    [BsonIgnore]
-    [JsonInclude, JsonPropertyName(FRIENDLY_KEY_USERNAME), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string Username => $"{ScreenName ?? "(Unknown Screenname)"}#{(Discriminator.ToString() ?? "").PadLeft(4, '0')}{(IsAdmin ? " (Administrator)" : "")}";
-
-    [BsonIgnore]
-    [JsonIgnore]
-    public bool IsExpired => Expiration <= DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    public string ToJwt() => RawJwt ?? JwtHelper.GenerateJwt(this);
+    public static TokenInfo FromJwt(string jwt) => JwtHelper.ValidateJwt(jwt);
 }
