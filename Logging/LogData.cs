@@ -89,11 +89,15 @@ public class LogData
             while (words.TryDequeue(out string word))
             {
                 if (length + word.Length + 1 > Log.Configuration.Printing.LengthMessageColumn && wordAdded)
+                {
                     builder
                         .NewLine()
                         .AppendLogUntilMessage()
                         .VerticalLine(BoxDrawing.LineStyle.Light)
                         .Space();
+                    length = 0;
+                }
+
                 builder
                     .Space()
                     .Append(word);

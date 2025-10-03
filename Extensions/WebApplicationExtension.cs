@@ -10,6 +10,7 @@ public static class WebApplicationExtension
 {
     public static WebApplication ConfigureMaynardTools(this WebApplication app, Action<Configuration.MaynardConfigurationBuilder> builder)
     {
+        Log.Info("Configuring Maynard Tools...");
         FlexJson.Configure(logEvent =>
         {
             switch (logEvent.Severity)
