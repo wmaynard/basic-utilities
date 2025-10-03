@@ -3,6 +3,7 @@ using System.Text.Json;
 using Maynard.Auth;
 using Maynard.Configuration;
 using Maynard.ErrorHandling;
+using Maynard.Extensions;
 using Maynard.Json.Utilities;
 using Maynard.Text;
 using Maynard.Time;
@@ -49,11 +50,26 @@ public class LogData
         .HorizontalLine(BoxDrawing.LineStyle.Heavy, Log.Configuration.Printing.LengthMessageColumn);
     
     
-    
-    // Timestamp | Owner | Severity | Message
-    // 
-    // Timestamp | Owner | Severity | This is a sample message that will wrap if too long
-    //                                Continued message here, can be disabled with DisableLineWrap()
+    /* Sample Log
+    Timestamp              ┃ Owner ┃ Level ┃ Message                                                                                                                                              
+    ━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    [PDT] 17:00:04.441     │ Will  │ GOOD  │ Logging configured successfully!
+    [PDT] 17:00:04.655     │ Will  │ GOOD  │ Connected to MongoDB.
+    [PDT] 17:00:04.660     │ Will  │ GOOD  │ Mongo configured successfully!
+    [PDT] 17:00:06.508     │ Will  │ GOOD  │ Maynard Tools configured successfully!
+    [PDT] 17:00:06.552     │ Will  │ ERROR │ This is a dummy error.
+                           ┊       ┊       └──┬── Log Data
+                           ┊       ┊          │ {
+                           ┊       ┊          │   "foo": "Bar"
+                           ┊       ┊          │ }
+                           ┊       ┊          ├── Exception Detail
+                           ┊       ┊          │ {
+                           ┊       ┊          │   "Message": "This is a dummy exception.",
+                           ┊       ┊          │   "StackTrace": null,
+                           ┊       ┊          │   "Type": "Exception"
+                           ┊       ┊       ┌──┘ }
+    [PDT] 17:00:06.556     │ Will  │ GOOD  │ This is a dummy good message.
+    */
     public override string ToString()
     {
         TableBuilder builder = new TableBuilder()
@@ -94,86 +110,6 @@ public class LogData
         if (Exception != null && Log.Configuration.Printing.PrintExceptions)
             builder.AppendIndentedLogExtra(Exception, printData);
         
-        return builder;
-    }
-
-
-}
-
-internal static class TableBuilderExtension
-{
-    internal static TableBuilder AppendIndentedLogTitle(this TableBuilder builder, string message, bool isFirstIndent = false, bool hasMoreLines = true, bool isFinal = false)
-    {
-        builder
-            .NewLine()
-            .AppendLogUntilMessage();
-        if (isFirstIndent) // The first line should branch off the table.
-        {
-            builder.Corner(BoxDrawing.CornerType.BottomLeft, BoxDrawing.SolidStyle.Light);
-
-            if (hasMoreLines) //  └──┬── Some Message
-                builder
-                    .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
-                    .Tee(BoxDrawing.TeeType.FacingDown, BoxDrawing.SolidStyle.Light)
-                    .HorizontalLine(BoxDrawing.LineStyle.Light, 2);
-            else //  └───── Some Message
-                builder.HorizontalLine(BoxDrawing.LineStyle.Light, 5);
-
-            builder
-                .Space()
-                .Append(message);
-        }
-        else
-            builder
-                .Space(3)
-                .Tee(BoxDrawing.TeeType.FacingRight, BoxDrawing.SolidStyle.Light)
-                .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
-                .Space()
-                .Append(message);
-
-        if (!hasMoreLines)
-            builder.NewLine(2);
-        return builder;
-    }
-    internal static TableBuilder AppendLogUntilMessage(this TableBuilder builder, string timestamp = "", string owner = "", string severity = "")
-    {
-        BoxDrawing.LineStyle style = string.IsNullOrWhiteSpace(timestamp) ? BoxDrawing.LineStyle.Dashes : BoxDrawing.LineStyle.Light;
-        return builder
-            .Cell(timestamp, Log.Configuration.Printing.LengthTimestampColumn)
-            .VerticalLine(style)
-            .Cell(owner, Log.Configuration.Printing.LengthOwnerColumn)
-            .VerticalLine(style)
-            .Cell(severity, Log.Configuration.Printing.LengthSeverityColumn);
-    }
-    internal static TableBuilder AppendIndentedLogMessageLine(this TableBuilder builder, string line, bool returnIndent)
-    {
-        builder
-            .NewLine()
-            .AppendLogUntilMessage();
-            
-        if (!returnIndent)
-            builder
-                .Space(3)
-                .VerticalLine(BoxDrawing.LineStyle.Light);
-        else
-            builder
-                .Corner(BoxDrawing.CornerType.TopLeft, BoxDrawing.SolidStyle.Light)
-                .HorizontalLine(BoxDrawing.LineStyle.Light, 2)
-                .Corner(BoxDrawing.CornerType.BottomRight, BoxDrawing.SolidStyle.Light);
-        return builder
-            .Space()
-            .Append(line);
-    }
-    
-    internal static TableBuilder AppendIndentedLogExtra(this TableBuilder builder, object extra, bool returnIndent = false)
-    {
-        Queue<string> lines = new(JsonSerializer
-            .Serialize(extra, JsonHelper.PrettyPrintingOptions)
-            .Split(Environment.NewLine));
-        builder.AppendIndentedLogTitle(extra is Exception ? "Exception Detail" : "Log Data", !returnIndent, lines.Count > 1);
-            
-        while (lines.TryDequeue(out string line))
-            builder.AppendIndentedLogMessageLine(line, returnIndent: returnIndent && lines.Count == 0);
         return builder;
     }
 }
