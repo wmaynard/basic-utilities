@@ -18,6 +18,7 @@
         <Product>maynard-basic-utilities</Product>
         <AssemblyVersion>1.0.0</AssemblyVersion>
         <AssemblyName>basic-utilities</AssemblyName>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
     
   <ItemGroup>
@@ -25,11 +26,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />
+    <PackageReference Include="jose-jwt" Version="5.2.0" />
+    <PackageReference Include="maynard-flex-json" Version="1.0.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.9" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\flex-json\flex-json.csproj" />
+    <Content Include=".github\workflows\dotnet-desktop.yml" />
   </ItemGroup>
 
 </Project>

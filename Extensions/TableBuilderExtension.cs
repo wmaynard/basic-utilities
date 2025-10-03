@@ -76,6 +76,7 @@ internal static class TableBuilderExtension
         Queue<string> lines = new(JsonSerializer
             .Serialize(extra, JsonHelper.PrettyPrintingOptions)
             .Split(Environment.NewLine));
+        
         builder.AppendIndentedLogTitle(extra is Exception ? "Exception Detail" : "Log Data", !returnIndent, lines.Count > 1);
             
         while (lines.TryDequeue(out string line))

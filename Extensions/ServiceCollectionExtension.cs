@@ -10,7 +10,7 @@ namespace Maynard.Extensions;
 public static class ServiceCollectionExtension
 {
     private static bool _added;
-    private static Type[] _singletons = Array.Empty<Type>();
+    private static Type[] _singletons = [];
     public static IServerSideBlazorBuilder AddMaynardTools(this IServerSideBlazorBuilder builder)
     {
         builder.Services.AddMaynardTools();
