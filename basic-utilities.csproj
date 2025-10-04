@@ -6,7 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
         <RootNamespace>Maynard</RootNamespace>
-        <PackageId>maynard-basic-utilities</PackageId>
+        <PackageId>Maynard.Utilities</PackageId>
         <Title>Maynard Basic Utilities</Title>
         <Authors>Will Maynard</Authors>
         <Description>A small nuget package for commonly used logging functions in my projects.</Description>
@@ -15,9 +15,9 @@
         <PackageLicenseUrl>https://github.com/wmaynard/basic-utilities/blob/main/LICENSE</PackageLicenseUrl>
         <RepositoryUrl>https://github.com/wmaynard/basic-utilities</RepositoryUrl>
         <Company>Will Maynard</Company>
-        <Product>maynard-basic-utilities</Product>
+        <Product>Maynard.BasicUtilities</Product>
         <AssemblyVersion>1.0.0</AssemblyVersion>
-        <AssemblyName>basic-utilities</AssemblyName>
+        <AssemblyName>Maynard.Utilities</AssemblyName>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
     
