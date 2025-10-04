@@ -22,6 +22,11 @@ jobs:
         env:
           NUGET_AUTH_TOKEN: ${{ secrets.PAT }}
 
+      - name: Restore dependencies
+        run: dotnet restore
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.PAT }}
+
       - name: .NET build
         run: dotnet build --configuration Release
       
