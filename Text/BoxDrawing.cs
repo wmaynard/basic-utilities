@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Maynard.ErrorHandling;
 using Maynard.Extensions;
+using Maynard.Time;
 
 namespace Maynard.Text;
 
