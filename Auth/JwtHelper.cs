@@ -9,6 +9,7 @@ using System.Text.Json;
 using Jose;
 using Maynard.Configuration;
 using Maynard.ErrorHandling;
+using Maynard.Extensions;
 using Maynard.Json.Utilities;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using MongoDB.Bson.Serialization.Attributes;
@@ -20,7 +21,7 @@ using Maynard.Json;
 
 namespace Maynard.Auth;
 
-internal static class JwtHelper
+public static class JwtHelper
 {
     // TODO: change to ES256; faster performance and smaller tokens.
     // To generate keys:
@@ -41,13 +42,39 @@ internal static class JwtHelper
     
     internal static JwtConfiguration Config { get; } = new();
 
+    /// <summary>
+    /// Creates a JWT from given TokenInfo.  Additionally, assigns the JWT to <see cref="TokenInfo.RawJwt"/>. 
+    /// </summary>
+    /// <param name="token">A representation of a user you want to generate a token for.</param>
+    /// <returns>A string representation of a JSON Web Token.  JWTs are publicly inspectable.</returns>
     internal static string GenerateJwt(TokenInfo token)
     {
         token.RawJwt = GenerateJwt(token.AccountId, token.Username, token.Email, token.PermissionSet, token.IsAdmin);
         return token.RawJwt;
     }
-    internal static string GenerateJwt(string accountId, string username, string email, int permissionFlags, bool isAdmin, int delayInSecondsBeforeValid = 0)
+    
+    /// <summary>
+    /// Creates a JWT from given parameters.  Certain parameters should be set during application startup.  See
+    /// <see cref="AuthConfigurationBuilder"/> for more information.  Only accountId is required. PII, such as username or email,
+    /// will be encrypted with AES to protect the data in case of leaked tokens.  See <see cref="StringExtension.Mask"/> for more information.
+    /// </summary>
+    /// <param name="accountId">The specific account ID for a user.  If using MongoDB, this should be a 24-digit hex string (ObjectID)</param>
+    /// <param name="username">Optional.  The username of the account.</param>
+    /// <param name="email">Optional.  The username of the account.</param>
+    /// <param name="permissionFlags">Optional.  If you want to lock specific features of your application on a per-token basis, use a
+    /// [Flags] enum and pass in the integer value of it.</param>
+    /// <param name="isAdmin">Optional.  If this token represents an administrator for your system, this flag will mark the token as an admin.</param>
+    /// <param name="delayInSecondsBeforeValid">Optional, Advanced.  If you want to generate a token for future use that isn't immediately valid,
+    /// pass in a delay.</param>
+    /// <returns>A string representation of a JSON Web Token.  JWTs are publicly inspectable.</returns>
+    /// <exception cref="InternalException"></exception>
+    public static string GenerateJwt(string accountId, string username = null, string email = null, int permissionFlags = 0, bool isAdmin = false, int delayInSecondsBeforeValid = 0)
     {
+        if (string.IsNullOrWhiteSpace(accountId))
+            throw new InternalException("Missing required field.", ErrorCode.InvalidValue, new
+            {
+                MissingField = nameof(accountId)
+            });
         Dictionary<string, object> payload = new()
         {
             // Standard claims
@@ -57,16 +84,20 @@ internal static class JwtHelper
             { KEY_ISSUER, Config.ServerIssuer },
             { KEY_ISSUED_AT, Timestamp.Now },
             { KEY_EXPIRATION, Timestamp.InTheFuture(seconds: Config.LifetimeInSeconds) },
-            
-            // Custom claims
-            { KEY_USERNAME, username },
-            { KEY_EMAIL, email },
-            { KEY_PERMISSIONS, Convert.ToInt32(permissionFlags) },
-            { KEY_IS_ADMIN, isAdmin }
         };
 
         if (delayInSecondsBeforeValid > 0)
             payload[KEY_VALID_FROM] = Timestamp.InTheFuture(seconds: delayInSecondsBeforeValid);
+        
+        // Custom claims use validation before inclusion in the JWT
+        if (!string.IsNullOrWhiteSpace(username))
+            payload[KEY_USERNAME] = username.Mask();
+        if (!string.IsNullOrWhiteSpace(email))
+            payload[KEY_EMAIL] = email.Mask();
+        if (permissionFlags > 0)
+            payload[KEY_PERMISSIONS] = permissionFlags;
+        if (isAdmin)
+            payload[KEY_IS_ADMIN] = true;
 
         RSAParameters rsaParams;
         using (StringReader reader = new(Config.PrivateKey))
@@ -120,8 +151,8 @@ internal static class JwtHelper
                 RawJwt = token,
                 
                 // Custom claims
-                Username = json.Require<string>(KEY_USERNAME),
-                Email = json.Require<string>(KEY_EMAIL),
+                Username = json.Optional<string>(KEY_USERNAME)?.Unmask(),
+                Email = json.Optional<string>(KEY_EMAIL)?.Unmask(),
                 PermissionSet = json.Optional<int>(KEY_PERMISSIONS),
                 IsAdmin = json.Optional<bool>(KEY_IS_ADMIN)
             };
