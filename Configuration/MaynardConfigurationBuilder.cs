@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Maynard.Auth;
 using Maynard.Extensions;
+using Maynard.Json.Extensions;
 using Maynard.Json.Utilities;
 using Maynard.Logging;
 using Maynard.Singletons;

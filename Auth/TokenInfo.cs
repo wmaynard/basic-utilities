@@ -1,4 +1,5 @@
 using Maynard.Json.Attributes;
+using Maynard.Json.Enums;
 using Maynard.Time;
 
 namespace Maynard.Auth;
