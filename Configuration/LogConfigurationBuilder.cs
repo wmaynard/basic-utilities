@@ -37,7 +37,7 @@ public class LogConfigurationBuilder : Builder
             if (Log.Configuration.OnFlush != null)
                 _errors.Add($"{nameof(AddFlushing)} has already been called and set {nameof(onFlush)}.");
             if (Log.Configuration.OnReroute != null)
-                _errors.Add($"{nameof(RerouteIndividualLogs)} has already been called and set and is in conflict with {nameof(onFlush)}.");
+                _errors.Add($"{nameof(Reroute)} has already been called and set and is in conflict with {nameof(onFlush)}.");
         }
 
         if (_errors.Any())
@@ -85,16 +85,16 @@ public class LogConfigurationBuilder : Builder
     public LogConfigurationBuilder AssignOwners(Type type) => AssignOwners(type, null);
     public LogConfigurationBuilder AssignOwners<T>(Type type, T defaultOwner) where T : Enum => AssignOwners(defaultOwner.GetType(), defaultOwner.AsInt());
 
-    public LogConfigurationBuilder RerouteIndividualLogs(EventHandler<LogData> onLogSent) => OnceOnly<LogConfigurationBuilder>(() =>
+    public LogConfigurationBuilder Reroute(EventHandler<LogData> onLogSent) => OnceOnly<LogConfigurationBuilder>(() =>
     {
         if (onLogSent == null)
             _errors.Add($"{nameof(onLogSent)} cannot be null.");
         if (Log.Configuration.OnReroute != null)
-            _errors.Add($"{nameof(RerouteIndividualLogs)} has already been called and set.");
+            _errors.Add($"{nameof(Reroute)} has already been called and set.");
         if (Log.Configuration.OnFlush != null)
             _errors.Add($"{nameof(AddFlushing)} has already been called and set a log handler, and is in conflict with {nameof(onLogSent)}.");
         if (_errors.Any())
-            throw new ConfigurationException(this, nameof(RerouteIndividualLogs), _errors);
+            throw new ConfigurationException(this, nameof(Reroute), _errors);
 
         Log.Configuration.OnReroute += onLogSent;
     });
