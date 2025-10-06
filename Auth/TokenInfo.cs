@@ -10,7 +10,7 @@ using Maynard.Json;
 using MongoDB.Bson.Serialization.Attributes;
 
 [BsonIgnoreExtraElements]
-public class TokenInfo : Model
+public class TokenInfo : FlexModel
 {
     //
     
