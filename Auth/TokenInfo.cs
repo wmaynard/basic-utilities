@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Maynard.Json.Attributes;
 using Maynard.Json.Enums;
 using Maynard.Time;
@@ -12,23 +13,31 @@ using MongoDB.Bson.Serialization.Attributes;
 [BsonIgnoreExtraElements]
 public class TokenInfo : FlexModel
 {
-    //
-    
-    
     [FlexIgnore]
     public string RawJwt { get; set; }
 
     [FlexKeys(json: "accountId", bson: "aid", Ignore.WhenNull)]
     public string AccountId { get; set; }
     
+    #region PII
+    [FlexKeys(json: "givenName", bson: "fn")]
+    public string FirstName { get; set; }
+    
+    [FlexKeys(json: "surname", bson: "ln")]
+    public string LastName { get; set; }
+    
+    [FlexKeys(json: "username", ignore: Ignore.InBson | Ignore.WhenNull)]
+    public string Username { get; set; }
+    
+    [FlexKeys(json: "email", bson: "@", Ignore.WhenNull)]
+    public string Email { get; set; }
+    #endregion PII
+    
     [FlexKeys(json: "permissions", bson: "perm")]
     public int PermissionSet { get; set; }
 
     [FlexKeys(json: "discriminator", bson: "d", Ignore.WhenDefault)]
     public int Discriminator { get; set; }
-
-    [FlexKeys(json: "email", bson: "@", Ignore.WhenNull)]
-    public string Email { get; set; }
 
     [FlexKeys(json: "expiration", bson: "exp", Ignore.WhenDefault)]
     public long Expiration { get; set; }
@@ -51,9 +60,6 @@ public class TokenInfo : FlexModel
     [FlexKeys(json: "secondsRemaining", ignore: Ignore.InBson | Ignore.WhenDefault)]
     public long SecondsRemaining => Math.Max(0, Expiration - Timestamp.Now);
 
-    [FlexKeys(json: "username", ignore: Ignore.InBson | Ignore.WhenNull)]
-    public string Username { get; set; }
-
     [FlexIgnore]
     public bool IsExpired => Expiration <= Timestamp.Now;
     
@@ -66,6 +72,19 @@ public class TokenInfo : FlexModel
     [FlexKeys(json: "validFrom", bson: "nbf", Ignore.WhenDefault)]
     public long ValidFrom { get; set; }
 
-    public string ToJwt() => RawJwt ?? JwtHelper.GenerateJwt(this);
+    public string ToJwt() => RawJwt ??= JwtHelper.GenerateJwt(this);
     public static TokenInfo FromJwt(string jwt) => JwtHelper.ValidateJwt(jwt);
+
+    public Claim[] ToClaims() =>
+    [
+        new (ClaimTypes.GivenName, FirstName),
+        new (ClaimTypes.Surname, LastName),
+        new (ClaimTypes.Sid, AccountId),
+        new (ClaimTypes.Email, Email),
+        new (ClaimTypes.NameIdentifier, AccountId),
+        new (ClaimTypes.Name, Username),
+        new (ClaimTypes.Expiration, Expiration.ToString()),
+        new (ClaimTypes.Authentication, RawJwt),
+        new (ClaimTypes.Country, null)
+    ];
 }
