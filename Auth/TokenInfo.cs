@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Maynard.ErrorHandling;
 using Maynard.Json.Attributes;
 using Maynard.Json.Enums;
 using Maynard.Time;
@@ -74,6 +75,20 @@ public class TokenInfo : FlexModel
 
     public string ToJwt() => RawJwt ??= JwtHelper.GenerateJwt(this);
     public static TokenInfo FromJwt(string jwt) => JwtHelper.ValidateJwt(jwt);
+
+    public static bool TryFromJwt(string jwt, out TokenInfo token)
+    {
+        try
+        {
+            token = JwtHelper.ValidateJwt(jwt);
+            return true;
+        }
+        catch
+        {
+            token = null;
+            return false;
+        }
+    }
 
     public Claim[] ToClaims() =>
     [

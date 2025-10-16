@@ -132,7 +132,7 @@ public static class Log
             lock (_Door)
                 Configuration.Queue.Enqueue(log, log.Timestamp);
             if (Configuration.Queue.Count >= Configuration.BufferSize)
-                Flush();
+                _ = Flush();
         }
     }
 
@@ -191,7 +191,7 @@ public static class Log
     {
         if (!Configuration.RerouteLogs)
             Console.WriteLine(LogData.GetHeaders());
-        await Flush();
+        _ = Flush();
     }
 
     internal static async Task Disable()
