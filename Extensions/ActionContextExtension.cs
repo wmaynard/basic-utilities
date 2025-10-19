@@ -40,7 +40,7 @@ public static class ActionContextExtension
         {
             if (!bodyOnly)
                 foreach (KeyValuePair<string, StringValues> pair in context.HttpContext.Request.Query)
-                    output[pair.Key] = pair.Value.ToString().Trim();
+                    output[pair.Key] = Uri.UnescapeDataString(pair.Value.ToString()).Trim();
             switch (context.HttpContext.Request.Method)
             {
                 case "HEAD":
