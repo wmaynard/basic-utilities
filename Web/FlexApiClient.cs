@@ -11,21 +11,14 @@ namespace Maynard.Web;
 
 public sealed class FlexApiClient : IFlexRequest
 {
-    private readonly HttpClient _client;
+    private readonly IHttpClientFactory _httpClientFactory;
     private string BaseUri { get; set; }
     private static int Jitter => Random.Shared.Next(0, 100);
 
-    public FlexApiClient(string baseUri)
+    public FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
     {
+        _httpClientFactory = httpClientFactory;
         BaseUri = baseUri;
-        #if DEBUG
-        if (baseUri.Contains("localhost"))
-            _client = new HttpClient(new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-            });
-        #endif
-        _client ??= new();
     }
 
     private async Task<FlexJson> SendAsync(FlexRequestBuilder builder, string method, CancellationToken token = default)
@@ -38,6 +31,7 @@ public sealed class FlexApiClient : IFlexRequest
         int retriesRemaining = result.MaxRetries;
         using CancellationTokenSource timeoutCts = new(TimeSpan.FromSeconds(builder._timeoutInSeconds));
         using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutCts.Token);
+        using HttpClient client = _httpClientFactory.CreateClient(nameof(FlexApiClient));
         
         do
         {
@@ -56,7 +50,7 @@ public sealed class FlexApiClient : IFlexRequest
                     await Task.Delay((int) Math.Pow(2, result.Retries) * 100 + Jitter, linkedCts.Token);
                 }
 
-                HttpResponseMessage response = await _client.SendAsync(builder._request, linkedCts.Token);
+                HttpResponseMessage response = await client.SendAsync(builder._request, linkedCts.Token);
                 result.StatusCode = response.StatusCode;
                 result.Data = await response.Content.ReadAsStringAsync(linkedCts.Token);
                 result.ElapsedMs = TimestampMs.Now - timestamp;
