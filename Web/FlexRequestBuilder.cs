@@ -5,7 +5,7 @@ using Maynard.Logging;
 
 namespace Maynard.Web;
 
-public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, string, CancellationToken, Task<FlexJson>> execute) : IFlexRequest, IValidator, IDisposable
+public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, string, Task<FlexJson>> execute) : FlexRequest, IValidator, IDisposable
 {
     private FlexJson _query;
     private FlexJson _body;
@@ -19,16 +19,17 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
     internal Action<FlexRequestResult> _onError;
     internal Action<FlexRequestResult> _onTimeout;
     internal CancellationToken _token;
-    private Func<FlexRequestBuilder, string, CancellationToken, Task<FlexJson>> _execute = execute;
+    private Func<FlexRequestBuilder, string, Task<FlexJson>> _execute = execute;
     private static readonly HttpMethod[] HasBody = [HttpMethod.Patch, HttpMethod.Post, HttpMethod.Put];
 
-    public FlexRequestBuilder AppendHeader(string key, string value)
+    #region Configuration
+    public override FlexRequestBuilder AppendHeader(string key, string value)
     {
         _request.Headers.Add(key, value);
         return this;
     }
 
-    public FlexRequestBuilder AppendHeaders(FlexJson headers)
+    public override FlexRequestBuilder AppendHeaders(FlexJson headers)
     {
         if (headers != null)
             foreach (string key in headers.Keys)
@@ -36,134 +37,141 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
         return this;
     }
 
-    public FlexRequestBuilder AppendQuery(string key, string value)
+    public override FlexRequestBuilder AppendQuery(string key, string value)
     {
         _query ??= new();
         _query[key] = value;
         return this;
     }
 
-    public FlexRequestBuilder SetQuery(FlexJson headers)
+    public override FlexRequestBuilder SetQuery(FlexJson headers)
     {
         if (headers != null)
             _query = headers;
         return this;
     }
 
-    public FlexRequestBuilder DoNotThrowOnErrors()
+    public override FlexRequestBuilder DoNotThrowOnErrors()
     {
         ThrowOnErrors = false;
         return this;
     }
 
-    public FlexRequestBuilder DoNotThrowOnTimeout()
+    public override FlexRequestBuilder DoNotThrowOnTimeout()
     {
         ThrowOnTimeout = false;
         return this;
     }
 
-    public FlexRequestBuilder SetBody(FlexJson body)
+    public override FlexRequestBuilder SetBody(FlexJson body)
     {
         if (body != null)
             _body = body;
         return this;
     }
 
-    public FlexRequestBuilder SetCancellationToken(CancellationToken token)
+    public override FlexRequestBuilder SetCancellationToken(CancellationToken token)
     {
         if (token != CancellationToken.None)
             _token = token;
         return this;
     }
 
-    public FlexRequestBuilder SetRetries(int retries)
+    public override FlexRequestBuilder SetRetries(int retries)
     {
         _maxRetries = retries;
         return this;
     }
 
-    public FlexRequestBuilder SetTimeout(int seconds)
+    public override FlexRequestBuilder SetTimeout(int seconds)
     {
         _timeoutInSeconds = seconds;
         return this;
     }
 
-    public FlexRequestBuilder SetUrl(string url)
+    public override FlexRequestBuilder SetUrl(string url)
     {
         _url = url;
         return this;
     }
 
-    public FlexRequestBuilder OnSuccess(Action<FlexRequestResult> callback)
+    public override FlexRequestBuilder OnSuccess(Action<FlexRequestResult> callback)
     {
         _onSuccess += callback;
         return this;
     }
 
-    public FlexRequestBuilder OnError(Action<FlexRequestResult> callback)
+    public override FlexRequestBuilder OnError(Action<FlexRequestResult> callback)
     {
         _onError += callback;
         return this;
     }
 
-    public FlexRequestBuilder OnTimeout(Action<FlexRequestResult> callback)
+    public override FlexRequestBuilder OnTimeout(Action<FlexRequestResult> callback)
     {
         _onTimeout += callback;
         return this;
     }
+    #endregion Configuration
+    
+    #region Synchronous Methods
+    public FlexJson Connect(string url, FlexJson query) => ((FlexRequest)this).Connect(url, query);
+    #endregion Synchronous Methods
 
-    public Task<FlexJson> ConnectAsync(string url, FlexJson query = null, CancellationToken token = default) => 
+    #region Asynchronous Methods
+    public override Task<FlexJson> ConnectAsync(string url, FlexJson query = null, CancellationToken token = default) => 
         SetUrl(url)
         .SetQuery(query)
         .SetCancellationToken(token)
         .Build(nameof(ConnectAsync));
 
-    public Task<FlexJson> DeleteAsync(string url, FlexJson query = null, CancellationToken token = default) => 
+    public override Task<FlexJson> DeleteAsync(string url, FlexJson query = null, CancellationToken token = default) => 
         SetUrl(url)
         .SetQuery(query)
         .SetCancellationToken(token)
         .Build(nameof(DeleteAsync));
 
-    public Task<FlexJson> GetAsync(string url, FlexJson query = null, CancellationToken token = default) => 
+    public override Task<FlexJson> GetAsync(string url, FlexJson query = null, CancellationToken token = default) => 
         SetUrl(url)
         .SetQuery(query)
         .SetCancellationToken(token)
         .Build(nameof(GetAsync));
-    public Task<FlexJson> HeadAsync(string url, FlexJson query = null, CancellationToken token = default) => 
+    public override Task<FlexJson> HeadAsync(string url, FlexJson query = null, CancellationToken token = default) => 
         SetUrl(url)
         .SetQuery(query)
         .SetCancellationToken(token)
         .Build(nameof(HeadAsync));
 
-    public Task<FlexJson> OptionsAsync(string url, FlexJson query = null, CancellationToken token = default) => 
+    public override Task<FlexJson> OptionsAsync(string url, FlexJson query = null, CancellationToken token = default) => 
         SetUrl(url)
         .SetQuery(query)
         .SetCancellationToken(token)
         .Build(nameof(OptionsAsync));
 
-    public Task<FlexJson> PatchAsync(string url, FlexJson body = null, CancellationToken token = default) => 
+    public override Task<FlexJson> PatchAsync(string url, FlexJson body = null, CancellationToken token = default) => 
         SetUrl(url)
         .SetBody(body)
         .SetCancellationToken(token)
         .Build(nameof(PatchAsync));
 
-    public Task<FlexJson> PostAsync(string url, FlexJson body = null, CancellationToken token = default) => 
+    public override Task<FlexJson> PostAsync(string url, FlexJson body = null, CancellationToken token = default) => 
         SetUrl(url)
         .SetBody(body)
         .SetCancellationToken(token)
         .Build(nameof(PostAsync));
 
-    public Task<FlexJson> PutAsync(string url, FlexJson body = null, CancellationToken token = default) => 
+    public override Task<FlexJson> PutAsync(string url, FlexJson body = null, CancellationToken token = default) => 
         SetUrl(url)
         .SetBody(body)
         .SetCancellationToken(token)
         .Build(nameof(PutAsync));
 
-    public Task<FlexJson> TraceAsync(string url, FlexJson query = null, CancellationToken token = default) => 
+    public override Task<FlexJson> TraceAsync(string url, FlexJson query = null, CancellationToken token = default) => 
         SetUrl(url)
         .SetQuery(query)
         .SetCancellationToken(token)
         .Build(nameof(TraceAsync));
+    #endregion Asynchronous Methods
 
     public void Validate(out List<string> errors)
     {
@@ -250,7 +258,7 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
         if (_body != null)
             _request.Content = new StringContent(_body, Encoding.UTF8, "application/json");
         
-        return await _execute(this, method, _token);
+        return await _execute(this, method);
     }
 
     public void Dispose()

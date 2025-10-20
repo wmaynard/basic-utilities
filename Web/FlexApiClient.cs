@@ -9,19 +9,41 @@ using Microsoft.AspNetCore.Http;
 
 namespace Maynard.Web;
 
-public sealed class FlexApiClient : IFlexRequest
+public sealed class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri) : FlexRequest
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-    private string BaseUri { get; set; }
     private static int Jitter => Random.Shared.Next(0, 100);
-
-    public FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
+    private string BaseUri { get; set; } = baseUri;
+    public override FlexRequestBuilder AppendHeader(string key, string value) => CreateBuilder().AppendHeader(key, value);
+    public override FlexRequestBuilder AppendHeaders(FlexJson headers) => CreateBuilder().AppendHeaders(headers);
+    public override FlexRequestBuilder AppendQuery(string key, string value) => CreateBuilder().AppendQuery(key, value);
+    public override FlexRequestBuilder SetQuery(FlexJson headers) => CreateBuilder().SetQuery(headers);
+    public override FlexRequestBuilder DoNotThrowOnErrors() => CreateBuilder().DoNotThrowOnErrors();
+    public override FlexRequestBuilder DoNotThrowOnTimeout() => CreateBuilder().DoNotThrowOnTimeout();
+    public override FlexRequestBuilder SetBody(FlexJson body) => CreateBuilder().SetBody(body);
+    public override FlexRequestBuilder SetCancellationToken(CancellationToken token) => CreateBuilder().SetCancellationToken(token);
+    public override FlexRequestBuilder SetRetries(int retries) => CreateBuilder().SetRetries(retries);
+    public override FlexRequestBuilder SetTimeout(int seconds) => CreateBuilder().SetTimeout(seconds);
+    public override FlexRequestBuilder SetUrl(string url) => CreateBuilder().SetUrl(url);
+    public override FlexRequestBuilder OnSuccess(Action<FlexRequestResult> callback) => CreateBuilder().OnSuccess(callback);
+    public override FlexRequestBuilder OnError(Action<FlexRequestResult> callback) => CreateBuilder().OnError(callback);
+    public override FlexRequestBuilder OnTimeout(Action<FlexRequestResult> callback) => CreateBuilder().OnTimeout(callback);
+    public override Task<FlexJson> ConnectAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().ConnectAsync(url, query, token);
+    public override Task<FlexJson> DeleteAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().DeleteAsync(url, query, token);
+    public override Task<FlexJson> GetAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().GetAsync(url, query, token);
+    public override Task<FlexJson> HeadAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().HeadAsync(url, query, token);
+    public override Task<FlexJson> OptionsAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().OptionsAsync(url, query, token);
+    public override Task<FlexJson> PatchAsync(string url, FlexJson body = null, CancellationToken token = default) => CreateBuilder().PatchAsync(url, body, token);
+    public override Task<FlexJson> PostAsync(string url, FlexJson body = null, CancellationToken token = default) => CreateBuilder().PostAsync(url, body, token);
+    public override Task<FlexJson> PutAsync(string url, FlexJson body = null, CancellationToken token = default) => CreateBuilder().PutAsync(url, body, token);
+    public override Task<FlexJson> TraceAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().TraceAsync(url, query, token);
+    
+    private FlexRequestBuilder CreateBuilder()
     {
-        _httpClientFactory = httpClientFactory;
-        BaseUri = baseUri;
+        FlexRequestBuilder builder = new(BaseUri, SendAsync);
+        return builder;
     }
-
-    private async Task<FlexJson> SendAsync(FlexRequestBuilder builder, string method, CancellationToken token = default)
+    
+    private async Task<FlexJson> SendAsync(FlexRequestBuilder builder, string method)
     {
         FlexRequestResult result = new()
         {
@@ -30,8 +52,8 @@ public sealed class FlexApiClient : IFlexRequest
         long timestamp = TimestampMs.Now;
         int retriesRemaining = result.MaxRetries;
         using CancellationTokenSource timeoutCts = new(TimeSpan.FromSeconds(builder._timeoutInSeconds));
-        using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutCts.Token);
-        using HttpClient client = _httpClientFactory.CreateClient(nameof(FlexApiClient));
+        using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(builder._token, timeoutCts.Token);
+        using HttpClient client = httpClientFactory.CreateClient(nameof(FlexApiClient));
         
         do
         {
@@ -104,57 +126,5 @@ public sealed class FlexApiClient : IFlexRequest
 
         return result.Data;
     }
-
-    private FlexRequestBuilder CreateBuilder()
-    {
-        FlexRequestBuilder builder = new(BaseUri, SendAsync);
-        return builder;
-    }
-
-    public FlexRequestBuilder AppendHeader(string key, string value) => CreateBuilder().AppendHeader(key, value);
-
-    public FlexRequestBuilder AppendHeaders(FlexJson headers) => CreateBuilder().AppendHeaders(headers);
-
-    public FlexRequestBuilder AppendQuery(string key, string value) => CreateBuilder().AppendQuery(key, value);
-
-    public FlexRequestBuilder SetQuery(FlexJson headers) => CreateBuilder().SetQuery(headers);
-
-    public FlexRequestBuilder DoNotThrowOnErrors() => CreateBuilder().DoNotThrowOnErrors();
-
-    public FlexRequestBuilder DoNotThrowOnTimeout() => CreateBuilder().DoNotThrowOnTimeout();
-
-    public FlexRequestBuilder SetBody(FlexJson body) => CreateBuilder().SetBody(body);
-
-    public FlexRequestBuilder SetCancellationToken(CancellationToken token) => CreateBuilder().SetCancellationToken(token);
-
-    public FlexRequestBuilder SetRetries(int retries) => CreateBuilder().SetRetries(retries);
-
-    public FlexRequestBuilder SetTimeout(int seconds) => CreateBuilder().SetTimeout(seconds);
-
-    public FlexRequestBuilder SetUrl(string url) => CreateBuilder().SetUrl(url);
-
-    public FlexRequestBuilder OnSuccess(Action<FlexRequestResult> callback) => CreateBuilder().OnSuccess(callback);
-
-    public FlexRequestBuilder OnError(Action<FlexRequestResult> callback) => CreateBuilder().OnError(callback);
-
-    public FlexRequestBuilder OnTimeout(Action<FlexRequestResult> callback) => CreateBuilder().OnTimeout(callback);
-
-    public Task<FlexJson> ConnectAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().ConnectAsync(url, query, token);
-
-    public Task<FlexJson> DeleteAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().DeleteAsync(url, query, token);
-
-    public Task<FlexJson> GetAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().GetAsync(url, query, token);
-
-    public Task<FlexJson> HeadAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().HeadAsync(url, query, token);
-
-    public Task<FlexJson> OptionsAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().OptionsAsync(url, query, token);
-
-    public Task<FlexJson> PatchAsync(string url, FlexJson body = null, CancellationToken token = default) => CreateBuilder().PatchAsync(url, body, token);
-
-    public Task<FlexJson> PostAsync(string url, FlexJson body = null, CancellationToken token = default) => CreateBuilder().PostAsync(url, body, token);
-
-    public Task<FlexJson> PutAsync(string url, FlexJson body = null, CancellationToken token = default) => CreateBuilder().PutAsync(url, body, token);
-
-    public Task<FlexJson> TraceAsync(string url, FlexJson query = null, CancellationToken token = default) => CreateBuilder().TraceAsync(url, query, token);
 }
 

@@ -15,6 +15,7 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
     internal const string KEY_TOKEN = "validatedToken";
     internal const string KEY_DATA = "requestDataAsFlexJson";
     internal const string KEY_GEODATA = "locationData";
+    internal const string KEY_MODELS = "validatedModels";
     
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
@@ -77,6 +78,7 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
         FlexJson data = context.GetRequestDataAsFlexJson();
         context.HttpContext.Items[KEY_DATA] = data;
         context.HttpContext.Items[KEY_GEODATA] = LocationData.Lookup(context.GetIpAddress());
+        context.HttpContext.Items[KEY_MODELS] = Jsonifier.UnJsonify2<FlexModel>(data);
 
         await next();
     }

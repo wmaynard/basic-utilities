@@ -18,6 +18,7 @@ public abstract class FlexController : Controller, IAutocaster
 {
     // TODO: Do we need to inject IServiceProvider?
     protected FlexJson Data => FromContext<FlexJson>(FlexFilter.KEY_DATA);
+    protected FlexModel[] Models => FromContext<FlexModel[]>(FlexFilter.KEY_MODELS);
     protected TokenInfo Token => FromContext<TokenInfo>(FlexFilter.KEY_TOKEN); // TODO: Is it possible to make this accessible to models?
     protected LocationData Geolocation => FromContext<LocationData>(FlexFilter.KEY_GEODATA);
 

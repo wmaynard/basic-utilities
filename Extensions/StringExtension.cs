@@ -91,4 +91,8 @@ public static class StringExtension
             return maskedValue;
         }
     }
+    
+    public static string ToCamelCase(this string input) => string.IsNullOrWhiteSpace(input) || char.IsLower(input[0])
+        ? input
+        : char.ToLowerInvariant(input[0]) + input[1..];
 }
