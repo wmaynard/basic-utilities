@@ -8,7 +8,7 @@ namespace Maynard.Web;
 public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, string, Task<FlexJson>> execute) : FlexRequest, IValidator, IDisposable
 {
     private FlexJson _query;
-    private FlexJson _body;
+    internal FlexJson _body;
     internal bool ThrowOnErrors { get; set; } = true;
     internal bool ThrowOnTimeout { get; set; } = true;
     internal int _maxRetries;

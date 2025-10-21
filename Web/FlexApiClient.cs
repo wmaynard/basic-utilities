@@ -1,3 +1,4 @@
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Maynard.Extensions;
@@ -9,7 +10,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Maynard.Web;
 
-public sealed class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri) : FlexRequest
+public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri) : FlexRequest
 {
     private static int Jitter => Random.Shared.Next(0, 100);
     private string BaseUri { get; set; } = baseUri;
@@ -42,8 +43,26 @@ public sealed class FlexApiClient(IHttpClientFactory httpClientFactory, string b
         FlexRequestBuilder builder = new(BaseUri, SendAsync);
         return builder;
     }
+
+    protected virtual async Task<InterimResult> Send(HttpClient client, FlexRequestBuilder builder, CancellationToken token)
+    {
+        HttpResponseMessage response = await client.SendAsync(builder._request, token);
+        return new()
+        {
+            Code = response.StatusCode,
+            Data = await response.Content.ReadAsStringAsync(token)
+        };
+    }
+
+    protected struct InterimResult
+    {
+        public InterimResult() { }
+        public HttpStatusCode Code { get; set; } = 0;
+        public FlexJson Data { get; set; } = null;
+        public long Timestamp { get; private set; } = TimestampMs.Now;
+    }
     
-    private async Task<FlexJson> SendAsync(FlexRequestBuilder builder, string method)
+    protected async Task<FlexJson> SendAsync(FlexRequestBuilder builder, string method)
     {
         FlexRequestResult result = new()
         {
@@ -53,7 +72,7 @@ public sealed class FlexApiClient(IHttpClientFactory httpClientFactory, string b
         int retriesRemaining = result.MaxRetries;
         using CancellationTokenSource timeoutCts = new(TimeSpan.FromSeconds(builder._timeoutInSeconds));
         using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(builder._token, timeoutCts.Token);
-        using HttpClient client = httpClientFactory.CreateClient(nameof(FlexApiClient));
+        using HttpClient client = httpClientFactory?.CreateClient(nameof(FlexApiClient));
         
         do
         {
@@ -71,11 +90,16 @@ public sealed class FlexApiClient(IHttpClientFactory httpClientFactory, string b
                     });
                     await Task.Delay((int) Math.Pow(2, result.Retries) * 100 + Jitter, linkedCts.Token);
                 }
+                
+                InterimResult interim = await Send(client, builder, linkedCts.Token);
+                result.StatusCode = interim.Code;
+                result.Data = interim.Data;
+                result.ElapsedMs = interim.Timestamp - timestamp;
 
-                HttpResponseMessage response = await client.SendAsync(builder._request, linkedCts.Token);
-                result.StatusCode = response.StatusCode;
-                result.Data = await response.Content.ReadAsStringAsync(linkedCts.Token);
-                result.ElapsedMs = TimestampMs.Now - timestamp;
+                // HttpResponseMessage response = await client.SendAsync(builder._request, linkedCts.Token);
+                // result.StatusCode = response.StatusCode;
+                // result.Data = await response.Content.ReadAsStringAsync(linkedCts.Token);
+                // result.ElapsedMs = TimestampMs.Now - timestamp;
             }
             catch (OperationCanceledException e) when (timeoutCts.IsCancellationRequested)
             {
