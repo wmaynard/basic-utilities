@@ -114,10 +114,6 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
     }
     #endregion Configuration
     
-    #region Synchronous Methods
-    public FlexJson Connect(string url, FlexJson query) => ((FlexRequest)this).Connect(url, query);
-    #endregion Synchronous Methods
-
     #region Asynchronous Methods
     public override Task<FlexJson> ConnectAsync(string url, FlexJson query = null, CancellationToken token = default) => 
         SetUrl(url)

@@ -90,16 +90,25 @@ public class TokenInfo : FlexModel
         }
     }
 
-    public Claim[] ToClaims() =>
-    [
-        new (ClaimTypes.GivenName, FirstName),
-        new (ClaimTypes.Surname, LastName),
-        new (ClaimTypes.Sid, AccountId),
-        new (ClaimTypes.Email, Email),
-        new (ClaimTypes.NameIdentifier, AccountId),
-        new (ClaimTypes.Name, Username),
-        new (ClaimTypes.Expiration, Expiration.ToString()),
-        new (ClaimTypes.Authentication, RawJwt),
-        new (ClaimTypes.Country, null)
-    ];
+    public Claim[] ToClaims()
+    {
+        List<Claim> output = new();
+
+        void AddIfNotNull(string type, string value)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                output.Add(new (type, value));
+        }
+        AddIfNotNull(ClaimTypes.GivenName, FirstName);
+        AddIfNotNull(ClaimTypes.Surname, LastName);
+        AddIfNotNull(ClaimTypes.Sid, AccountId);
+        AddIfNotNull(ClaimTypes.Email, Email);
+        AddIfNotNull(ClaimTypes.NameIdentifier, AccountId);
+        AddIfNotNull(ClaimTypes.Name, Username);
+        AddIfNotNull(ClaimTypes.Expiration, Expiration.ToString());
+        AddIfNotNull(ClaimTypes.Authentication, RawJwt);
+        AddIfNotNull(ClaimTypes.Country, CountryCode);
+        
+        return output.ToArray();
+    }
 }
