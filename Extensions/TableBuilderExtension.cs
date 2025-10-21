@@ -73,15 +73,33 @@ internal static class TableBuilderExtension
     
     internal static TableBuilder AppendIndentedLogExtra(this TableBuilder builder, object extra, bool returnIndent = false)
     {
-        Queue<string> lines = new(JsonSerializer
-            .Serialize(extra, JsonHelper.PrettyPrintingOptions)
-            .Split(Environment.NewLine));
+        try
+        {
+            // Because of a quirk in C#, compile-time type checking behaves differently than runtime types here.
+            // Do NOT merge the explicit cast cast here into a type check.  The JsonSerializer can fail on certain
+            // exception types due to the many different properties, and if that happens, the expected log event will
+            // not come through as expected.
+            // Another approach could be to flatten the exception manually here rather than letting the JsonConverter
+            // added in options, but that seems like duplication of work.
+            // TODO: Explore a factory pattern to flatten exceptions in a JsonConverter.
+            // ReSharper disable once MergeCastWithTypeCheck
+            string json = extra is not Exception
+                ? JsonSerializer.Serialize(extra, JsonHelper.PrettyPrintingOptions)
+                : JsonSerializer.Serialize((Exception) extra, JsonHelper.PrettyPrintingOptions);
+            Queue<string> lines = new(json
+                .Split(Environment.NewLine));
         
-        builder.AppendIndentedLogTitle(extra is Exception ? "Exception Detail" : "Log Data", !returnIndent, lines.Count > 1);
+            builder.AppendIndentedLogTitle(extra is Exception ? "Exception Detail" : "Log Data", !returnIndent, lines.Count > 1);
             
-        while (lines.TryDequeue(out string line))
-            builder.AppendIndentedLogMessageLine(line, returnIndent: returnIndent && lines.Count == 0);
-        return builder;
+            while (lines.TryDequeue(out string line))
+                builder.AppendIndentedLogMessageLine(line, returnIndent: returnIndent && lines.Count == 0);
+            return builder;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Tried to add a log extra to the log table, but failed to do so.  Exception: {e}");
+            return builder;
+        }
     }
     #endregion
 }

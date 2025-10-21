@@ -104,4 +104,5 @@ public static class Timestamp
             .ToUnixTimeSeconds();
     public static DateTime ToDateTime(this long unixTimestamp) => DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime;
     public static DateTime ToDateTimeUtc(this long unixTimestamp) => DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).UtcDateTime;
+    public static string TimeUntil(long unixTimestamp) => (ToDateTimeUtc(unixTimestamp) - DateTimeOffset.UtcNow).ToString(@"hh\:mm\:ss");
 }

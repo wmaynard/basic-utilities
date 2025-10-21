@@ -39,18 +39,81 @@ public static class JwtHelper
     private const string KEY_VALID_FROM = "nbf";
     private const string KEY_EXPIRATION = "exp";
     private const string KEY_ISSUED_AT = "iat";
+    private const string KEY_FIRST_NAME = "fn";
+    private const string KEY_LAST_NAME = "ln";
     
     internal static JwtConfiguration Config { get; } = new();
 
+    private static string GenerateJwt(Dictionary<string, object> claims)
+    {
+        RSAParameters rsaParams;
+        using (StringReader reader = new(Config.PrivateKey))
+        {
+            PemReader pemReader = new(reader);
+            object pemObject = pemReader.ReadObject()
+                ?? throw new InternalException("Unable to read RSA private key", ErrorCode.NotConfigured);
+
+            RsaPrivateCrtKeyParameters privateRsaParams = pemObject switch
+            {
+                AsymmetricCipherKeyPair keyPair => (RsaPrivateCrtKeyParameters)keyPair.Private,
+                RsaPrivateCrtKeyParameters rsaParamsOnly => rsaParamsOnly,
+                _ => throw new InternalException($"Unsupported PEM object type: {pemObject.GetType().Name}", ErrorCode.NotConfigured)
+            };
+
+            rsaParams = DotNetUtilities.ToRSAParameters(privateRsaParams);
+        }
+
+        using (RSACryptoServiceProvider rsa = new())
+        {
+            rsa.ImportParameters(rsaParams);
+            return JWT.Encode(claims, rsa, ALGORITHM);
+        }
+    }
+    
     /// <summary>
     /// Creates a JWT from given TokenInfo.  Additionally, assigns the JWT to <see cref="TokenInfo.RawJwt"/>. 
     /// </summary>
     /// <param name="token">A representation of a user you want to generate a token for.</param>
     /// <returns>A string representation of a JSON Web Token.  JWTs are publicly inspectable.</returns>
-    internal static string GenerateJwt(TokenInfo token)
+    internal static string GenerateJwt(TokenInfo token, int permissionFlags = 0, bool isAdmin = false, int delayInSecondsBeforeValid = 0)
     {
-        token.RawJwt = GenerateJwt(token.AccountId, token.Username, token.Email, token.PermissionSet, token.IsAdmin);
-        return token.RawJwt;
+        if (string.IsNullOrWhiteSpace(token?.AccountId))
+            throw new InternalException("Missing required field.", ErrorCode.InvalidValue, new
+            {
+                MissingField = nameof(TokenInfo.AccountId)
+            });
+        
+        Dictionary<string, object> payload = new()
+        {
+            // Standard claims
+            { KEY_SUBSCRIBER_ID, token.AccountId },
+            { KEY_JWT_ID, Guid.NewGuid().ToString() },
+            { KEY_AUDIENCE, Config.ServerAudience },
+            { KEY_ISSUER, Config.ServerIssuer },
+            { KEY_ISSUED_AT, Timestamp.Now },
+            { KEY_EXPIRATION, Timestamp.InTheFuture(seconds: Config.LifetimeInSeconds) },
+        };
+
+        if (delayInSecondsBeforeValid > 0)
+            payload[KEY_VALID_FROM] = Timestamp.InTheFuture(seconds: delayInSecondsBeforeValid);
+        
+        // Custom claims use validation before inclusion in the JWT
+        #region PII
+        if (!string.IsNullOrWhiteSpace(token.Username))
+            payload[KEY_USERNAME] = token.Username.Mask();
+        if (!string.IsNullOrWhiteSpace(token.Email))
+            payload[KEY_EMAIL] = token.Email.Mask();
+        if (!string.IsNullOrWhiteSpace(token.FirstName))
+            payload[KEY_FIRST_NAME] = token.FirstName.Mask();
+        if (!string.IsNullOrWhiteSpace(token.LastName))
+            payload[KEY_LAST_NAME] = token.LastName.Mask();
+        #endregion PII
+        if (permissionFlags > 0)
+            payload[KEY_PERMISSIONS] = permissionFlags;
+        if (isAdmin)
+            payload[KEY_IS_ADMIN] = true;
+        
+        return GenerateJwt(payload);
     }
     
     /// <summary>
@@ -99,21 +162,7 @@ public static class JwtHelper
         if (isAdmin)
             payload[KEY_IS_ADMIN] = true;
 
-        RSAParameters rsaParams;
-        using (StringReader reader = new(Config.PrivateKey))
-        {
-            PemReader pemReader = new(reader);
-            AsymmetricCipherKeyPair pair = (AsymmetricCipherKeyPair)pemReader.ReadObject()
-                ?? throw new InternalException("Unable to read RSA private key", ErrorCode.NotConfigured);
-            RsaPrivateCrtKeyParameters privateRsaParams = (RsaPrivateCrtKeyParameters)pair.Private;
-            rsaParams = DotNetUtilities.ToRSAParameters(privateRsaParams);
-        }
-
-        using (RSACryptoServiceProvider rsa = new())
-        {
-            rsa.ImportParameters(rsaParams);
-            return JWT.Encode(payload, rsa, ALGORITHM);
-        }
+        return GenerateJwt(payload);
     }
     
     internal static TokenInfo ValidateJwt(string token)
@@ -153,6 +202,8 @@ public static class JwtHelper
                 // Custom claims
                 Username = json.Optional<string>(KEY_USERNAME)?.Unmask(),
                 Email = json.Optional<string>(KEY_EMAIL)?.Unmask(),
+                FirstName = json.Optional<string>(KEY_FIRST_NAME)?.Unmask(),
+                LastName = json.Optional<string>(KEY_LAST_NAME)?.Unmask(),
                 PermissionSet = json.Optional<int>(KEY_PERMISSIONS),
                 IsAdmin = json.Optional<bool>(KEY_IS_ADMIN)
             };

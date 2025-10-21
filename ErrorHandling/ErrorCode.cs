@@ -2,6 +2,7 @@ namespace Maynard.ErrorHandling;
 
 internal enum ErrorCode
 {
+    Unknown = 0,
     ExtensionMethodFailure = 1_000,
     EnumOutOfBounds = 1_100,
     EnumFlagsMisused = 1_200,
@@ -12,4 +13,6 @@ internal enum ErrorCode
     NotConfigured = 1_700,
     ExpiredToken = 1_800,
     InvalidToken = 1_900,
+    InvalidJson = 2_000,
+    InvalidRequestData = 2_100,
 }

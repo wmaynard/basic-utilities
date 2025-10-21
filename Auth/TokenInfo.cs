@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Maynard.ErrorHandling;
 using Maynard.Json.Attributes;
 using Maynard.Json.Enums;
 using Maynard.Time;
@@ -12,23 +14,31 @@ using MongoDB.Bson.Serialization.Attributes;
 [BsonIgnoreExtraElements]
 public class TokenInfo : FlexModel
 {
-    //
-    
-    
     [FlexIgnore]
     public string RawJwt { get; set; }
 
     [FlexKeys(json: "accountId", bson: "aid", Ignore.WhenNull)]
     public string AccountId { get; set; }
     
+    #region PII
+    [FlexKeys(json: "givenName", bson: "fn")]
+    public string FirstName { get; set; }
+    
+    [FlexKeys(json: "surname", bson: "ln")]
+    public string LastName { get; set; }
+    
+    [FlexKeys(json: "username", ignore: Ignore.InBson | Ignore.WhenNull)]
+    public string Username { get; set; }
+    
+    [FlexKeys(json: "email", bson: "@", Ignore.WhenNull)]
+    public string Email { get; set; }
+    #endregion PII
+    
     [FlexKeys(json: "permissions", bson: "perm")]
     public int PermissionSet { get; set; }
 
     [FlexKeys(json: "discriminator", bson: "d", Ignore.WhenDefault)]
     public int Discriminator { get; set; }
-
-    [FlexKeys(json: "email", bson: "@", Ignore.WhenNull)]
-    public string Email { get; set; }
 
     [FlexKeys(json: "expiration", bson: "exp", Ignore.WhenDefault)]
     public long Expiration { get; set; }
@@ -51,9 +61,6 @@ public class TokenInfo : FlexModel
     [FlexKeys(json: "secondsRemaining", ignore: Ignore.InBson | Ignore.WhenDefault)]
     public long SecondsRemaining => Math.Max(0, Expiration - Timestamp.Now);
 
-    [FlexKeys(json: "username", ignore: Ignore.InBson | Ignore.WhenNull)]
-    public string Username { get; set; }
-
     [FlexIgnore]
     public bool IsExpired => Expiration <= Timestamp.Now;
     
@@ -66,6 +73,42 @@ public class TokenInfo : FlexModel
     [FlexKeys(json: "validFrom", bson: "nbf", Ignore.WhenDefault)]
     public long ValidFrom { get; set; }
 
-    public string ToJwt() => RawJwt ?? JwtHelper.GenerateJwt(this);
+    public string ToJwt() => RawJwt ??= JwtHelper.GenerateJwt(this);
     public static TokenInfo FromJwt(string jwt) => JwtHelper.ValidateJwt(jwt);
+
+    public static bool TryFromJwt(string jwt, out TokenInfo token)
+    {
+        try
+        {
+            token = JwtHelper.ValidateJwt(jwt);
+            return true;
+        }
+        catch
+        {
+            token = null;
+            return false;
+        }
+    }
+
+    public Claim[] ToClaims()
+    {
+        List<Claim> output = new();
+
+        void AddIfNotNull(string type, string value)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                output.Add(new (type, value));
+        }
+        AddIfNotNull(ClaimTypes.GivenName, FirstName);
+        AddIfNotNull(ClaimTypes.Surname, LastName);
+        AddIfNotNull(ClaimTypes.Sid, AccountId);
+        AddIfNotNull(ClaimTypes.Email, Email);
+        AddIfNotNull(ClaimTypes.NameIdentifier, AccountId);
+        AddIfNotNull(ClaimTypes.Name, Username);
+        AddIfNotNull(ClaimTypes.Expiration, Expiration.ToString());
+        AddIfNotNull(ClaimTypes.Authentication, RawJwt);
+        AddIfNotNull(ClaimTypes.Country, CountryCode);
+        
+        return output.ToArray();
+    }
 }
