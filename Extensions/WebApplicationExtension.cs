@@ -49,6 +49,8 @@ public static class WebApplicationExtension
         if (ServiceCollectionExtension.InitializeSingletons(app.Services) == 0)
             Log.Warn("No singletons were initialized; ensure you've called builder.Services.AddMaynardTools() before configuring your app.");
         
+        app.UseCors(ServiceCollectionExtension.CorsPolicyName);
+        
         Log.Good("Maynard Tools configured successfully!");
         return app;
     }
