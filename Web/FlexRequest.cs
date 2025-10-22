@@ -1,4 +1,5 @@
 using System.Net;
+using Maynard.Auth;
 using Maynard.Json;
 
 namespace Maynard.Web;
@@ -6,6 +7,8 @@ namespace Maynard.Web;
 public abstract class FlexRequest
 {
     #region Configuration
+    public abstract FlexRequestBuilder AddAuthorization(string token);
+    public FlexRequestBuilder AddAuthorization(TokenInfo token) => AddAuthorization(token?.RawJwt);
     public abstract FlexRequestBuilder AppendHeader(string key, string value);
     public abstract FlexRequestBuilder AppendHeaders(FlexJson headers);
     public abstract FlexRequestBuilder AppendQuery(string key, string value);

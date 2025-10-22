@@ -14,6 +14,7 @@ public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
 {
     private static int Jitter => Random.Shared.Next(0, 100);
     private string BaseUri { get; set; } = baseUri;
+    public override FlexRequestBuilder AddAuthorization(string token) => CreateBuilder().AddAuthorization(token);
     public override FlexRequestBuilder AppendHeader(string key, string value) => CreateBuilder().AppendHeader(key, value);
     public override FlexRequestBuilder AppendHeaders(FlexJson headers) => CreateBuilder().AppendHeaders(headers);
     public override FlexRequestBuilder AppendQuery(string key, string value) => CreateBuilder().AppendQuery(key, value);
@@ -97,7 +98,7 @@ public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
                 result.ElapsedMs = interim.Timestamp - timestamp;
 
                 if (!result.IsSuccess)
-                    throw new Exception(result.Data.Optional<string>("message") ?? "Unknown error.  Check the endpoint.");
+                    throw new Exception(result.Data?.Optional<string>("message") ?? "Unknown error.  Check the endpoint.");
                 builder._onSuccess?.Invoke(result);
             }
             catch (OperationCanceledException e) when (timeoutCts.IsCancellationRequested)
@@ -128,7 +129,7 @@ public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
             }
             catch (Exception e)
             {
-                result.Error = "Unable to successfully send or parse response.";
+                result.Error = $"HTTP {result.StatusCodeAsInt} Unable to successfully send or parse response.";
                 result.Exception = e;
                 Log.Error(e.Message, data: new
                 {

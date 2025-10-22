@@ -23,6 +23,9 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
     private static readonly HttpMethod[] HasBody = [HttpMethod.Patch, HttpMethod.Post, HttpMethod.Put];
 
     #region Configuration
+
+    public override FlexRequestBuilder AddAuthorization(string token) => AppendHeader("Authorization", $"Bearer {token}");
+
     public override FlexRequestBuilder AppendHeader(string key, string value)
     {
         _request.Headers.Add(key, value);
