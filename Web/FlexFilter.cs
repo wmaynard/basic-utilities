@@ -87,7 +87,7 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
     {
         Exception exception = context.Exception;
         
-        Log.Error($"Uncaught exception: {exception.Message}", data: new
+        Log.Verbose($"Uncaught exception: {exception.Message}", data: new
         {
             Help = "This exception has been suppressed by the framework filters.  It should be handled more gracefully.",
             Endpoint = context.GetEndpoint()
@@ -97,7 +97,7 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
 
         FlexJson response = new()
         {
-            {"message", "The server encountered an error."}
+            { "message", "The server encountered an error, likely an unsuccessful API response." }
         };
         
         #if DEBUG

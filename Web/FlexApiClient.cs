@@ -96,10 +96,9 @@ public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
                 result.Data = interim.Data;
                 result.ElapsedMs = interim.Timestamp - timestamp;
 
-                // HttpResponseMessage response = await client.SendAsync(builder._request, linkedCts.Token);
-                // result.StatusCode = response.StatusCode;
-                // result.Data = await response.Content.ReadAsStringAsync(linkedCts.Token);
-                // result.ElapsedMs = TimestampMs.Now - timestamp;
+                if (!result.IsSuccess)
+                    throw new Exception(result.Data.Optional<string>("message") ?? "Unknown error.  Check the endpoint.");
+                builder._onSuccess?.Invoke(result);
             }
             catch (OperationCanceledException e) when (timeoutCts.IsCancellationRequested)
             {
@@ -138,11 +137,6 @@ public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
                 builder._onError?.Invoke(result);
                 if (e is not TaskCanceledException && builder.ThrowOnErrors)
                     throw;
-            }
-            finally
-            {
-                if (result.IsSuccess)
-                    builder._onSuccess?.Invoke(result);
             }
         } while (!result.IsSuccess && result.StatusCodeAsInt.IsNotBetween(400, 499) && retriesRemaining-- > 0);
         
