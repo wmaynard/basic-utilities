@@ -3,6 +3,7 @@ using Maynard.ErrorHandling;
 using Maynard.Json.Attributes;
 using Maynard.Json.Enums;
 using Maynard.Time;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Maynard.Auth;
 
@@ -14,6 +15,8 @@ using MongoDB.Bson.Serialization.Attributes;
 [BsonIgnoreExtraElements]
 public class TokenInfo : FlexModel
 {
+    public const string KEY_COOKIE_NAME = "Cookie.Kwan";
+    
     [FlexIgnore]
     public string RawJwt { get; set; }
 
@@ -111,4 +114,6 @@ public class TokenInfo : FlexModel
         
         return output.ToArray();
     }
+    
+    public AuthenticationState ToAuthenticationState() => new (new ClaimsPrincipal(new ClaimsIdentity(ToClaims(), nameof(TokenInfo))));
 }
