@@ -16,11 +16,11 @@
         <RepositoryUrl>https://github.com/wmaynard/basic-utilities</RepositoryUrl>
         <Company>Will Maynard</Company>
         <Product>Maynard.Utilities</Product>
-        <AssemblyVersion>0.8.3</AssemblyVersion>
+        <AssemblyVersion>0.8.4</AssemblyVersion>
         <AssemblyName>Maynard.Utilities</AssemblyName>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageIcon>icon.png</PackageIcon>
-        <Version>0.8.3</Version>
+        <Version>0.8.4</Version>
     </PropertyGroup>
     
   <ItemGroup>
@@ -30,7 +30,7 @@
   <ItemGroup>
     <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />
     <PackageReference Include="jose-jwt" Version="5.2.0" />
-    <PackageReference Include="Maynard.FlexJson" Version="1.0.3" />
+    <PackageReference Include="Maynard.FlexJson" Version="1.0.7" />
     <PackageReference Include="System.Text.Json" Version="9.0.9" />
   </ItemGroup>
 
@@ -48,10 +48,6 @@
 
     <ItemGroup>
       <Folder Include=".github\" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\flex-json\flex-json.csproj" />
     </ItemGroup>
 
     <Target Name="PushToNuGet" AfterTargets="Pack" Condition="'$(Configuration)' == 'Release'">
