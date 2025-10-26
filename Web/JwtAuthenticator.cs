@@ -34,7 +34,6 @@ public class JwtAuthenticator(IHttpContextAccessor context) : AuthenticationStat
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        Log.Error("New state request");
         try
         {
             Token = context.ValidateJwt();
@@ -44,7 +43,6 @@ public class JwtAuthenticator(IHttpContextAccessor context) : AuthenticationStat
             Log.Error("Invalid or nonexistent JWT");
         }
         
-        Log.Info($"{Id}  CurrentToken: " + Token.Username);
         return Token?.ToAuthenticationState() 
             ?? new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         // ClaimsPrincipal claims = CurrentToken?.ToClaims() ?? new ClaimsPrincipal(new ClaimsIdentity());
