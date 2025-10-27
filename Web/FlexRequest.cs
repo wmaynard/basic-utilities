@@ -69,8 +69,5 @@ public abstract class FlexRequest
     public Task<FlexJson> PutModelsAsync(string url, CancellationToken token = default, params FlexModel[] models) => PutAsync(url, Jsonifier.Jsonify(models), token);
     #endregion FlexModel-Specific Methods
     
-    
-    
-    
     private static FlexJson Await(Task<FlexJson> task) => task.GetAwaiter().GetResult();
 }

@@ -252,7 +252,7 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
                 url.Append($"{key}={Uri.EscapeDataString(_query.Optional<string>(key))}&");
             url.Remove(url.Length - 1, 1);
         }
-        _request.RequestUri = new Uri(url.ToString());
+        _request.RequestUri = new Uri(url.ToString(), UriKind.RelativeOrAbsolute);
         
         if (_body != null)
             _request.Content = new StringContent(_body, Encoding.UTF8, "application/json");

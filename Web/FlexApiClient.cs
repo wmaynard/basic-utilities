@@ -67,6 +67,7 @@ public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
     {
         FlexRequestResult result = new()
         {
+            Url = builder._request.RequestUri?.ToString(),
             MaxRetries = builder._maxRetries
         };
         long timestamp = TimestampMs.Now;

@@ -5,6 +5,7 @@ namespace Maynard.Web;
 
 public class FlexRequestResult
 {
+    public string Url { get; set; }
     public FlexJson Data { get; set; }
     public string Error { get; set; }
     public HttpStatusCode StatusCode { get; set; }
