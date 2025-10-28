@@ -16,11 +16,11 @@
         <RepositoryUrl>https://github.com/wmaynard/basic-utilities</RepositoryUrl>
         <Company>Will Maynard</Company>
         <Product>Maynard.Utilities</Product>
-        <AssemblyVersion>0.8.6</AssemblyVersion>
+        <AssemblyVersion>0.8.7</AssemblyVersion>
         <AssemblyName>Maynard.Utilities</AssemblyName>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageIcon>icon.png</PackageIcon>
-        <Version>0.8.6</Version>
+        <Version>0.8.7</Version>
     </PropertyGroup>
     
   <ItemGroup>
@@ -31,7 +31,7 @@
     <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />
     <PackageReference Include="jose-jwt" Version="5.2.0" />
     <PackageReference Include="Maynard.FlexJson" Version="1.0.7" />
-    <PackageReference Include="System.Text.Json" Version="9.0.9" />
+    <PackageReference Include="System.Text.Json" Version="9.0.10" />
   </ItemGroup>
 
     <PropertyGroup>
