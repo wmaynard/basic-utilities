@@ -13,6 +13,7 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
     internal bool ThrowOnTimeout { get; set; } = true;
     internal int _maxRetries;
     internal int _timeoutInSeconds = 30;
+    internal bool _sendAsFormData = false;
     private string _url;
     internal HttpRequestMessage _request = new();
     internal Action<FlexRequestResult> _onSuccess;
@@ -25,6 +26,12 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
     #region Configuration
 
     public override FlexRequestBuilder AddAuthorization(string token) => AppendHeader("Authorization", $"Bearer {token}");
+
+    public override FlexRequestBuilder SendAsFormData()
+    {
+        _sendAsFormData = true;
+        return this;
+    }
 
     public override FlexRequestBuilder AppendHeader(string key, string value)
     {
@@ -253,9 +260,14 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
             url.Remove(url.Length - 1, 1);
         }
         _request.RequestUri = new Uri(url.ToString(), UriKind.RelativeOrAbsolute);
-        
-        if (_body != null)
-            _request.Content = new StringContent(_body, Encoding.UTF8, "application/json");
+
+
+        _request.Content = _body switch
+        {
+            _ when _body == null => null,
+            _ when _sendAsFormData => _body.ConvertToFormData(),
+            _ => new StringContent(_body, Encoding.UTF8, "application/json")
+        };
         
         return await _execute(this, method);
     }

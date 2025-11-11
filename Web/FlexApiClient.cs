@@ -14,6 +14,8 @@ public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
 {
     private static int Jitter => Random.Shared.Next(0, 100);
     private string BaseUri { get; set; } = baseUri;
+    public override FlexRequestBuilder SendAsFormData() => CreateBuilder().SendAsFormData();
+
     public override FlexRequestBuilder AddAuthorization(string token) => CreateBuilder().AddAuthorization(token);
     public override FlexRequestBuilder AppendHeader(string key, string value) => CreateBuilder().AppendHeader(key, value);
     public override FlexRequestBuilder AppendHeaders(FlexJson headers) => CreateBuilder().AppendHeaders(headers);

@@ -21,6 +21,7 @@ public abstract class FlexController : Controller, IAutocaster
     protected FlexModel[] Models => FromContext<FlexModel[]>(FlexFilter.KEY_MODELS);
     protected TokenInfo Token => FromContext<TokenInfo>(FlexFilter.KEY_TOKEN); // TODO: Is it possible to make this accessible to models?
     protected LocationData Geolocation => FromContext<LocationData>(FlexFilter.KEY_GEODATA);
+    protected string BaseUri => $"{Request.Scheme}://{Request.Host.Value}";
 
     [NonAction]
     private T FromContext<T>(string key, object _default = null)

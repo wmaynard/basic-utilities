@@ -9,6 +9,7 @@ public class RequireAuth(AuthType type = AuthType.StandardToken) : Attribute
 [Flags]
 public enum AuthType
 {
+    None = 0,
     Permissions = 0b_0001, // TODO
     StandardToken = 0b_0010,
     AdminToken = 0b_0110,

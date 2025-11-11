@@ -3,6 +3,7 @@ using Maynard.ErrorHandling;
 using Maynard.Extensions;
 using Maynard.Json;
 using Maynard.Logging;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -24,7 +25,7 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
 
         RequireAuth[] auths = context.GetControllerAttributes<RequireAuth>();
         NoAuth noAuth = context.GetControllerAttributes<NoAuth>().FirstOrDefault();
-        AuthType combined = auths.Aggregate(AuthType.Optional, (current, auth) => current | auth.Type);
+        AuthType combined = auths.Aggregate(AuthType.None, (current, auth) => current | auth.Type);
         
         if (!auths.Any() && noAuth == null)
             Log.Warn("No auth attributes found on this controller.", data: new
@@ -48,23 +49,27 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
             {
                 if (optional)
                     return;
-                throw new InternalException("No token present in request.", ErrorCode.InvalidToken, new
+                Log.Verbose("No token present in request.", new
                 {
                     Help = "The authorization header with JWT is either missing or incorrect.",
                     Endpoint = context.GetEndpoint()
                 });
+                context.Result = new ObjectResult(new { Message = "No valid token is present in the request." })
+                {
+                    StatusCode = StatusCodes.Status403Forbidden
+                };
+                return;
             }
 
             if (adminRequired && !token.IsAdmin)
-                throw new InternalException("Admin token required.", ErrorCode.InvalidToken, new
+                context.Result = new ObjectResult(new { Message = "A valid admin token is required." })
                 {
-                    Help = "This endpoint requires an admin token.",
-                    Endpoint = context.GetEndpoint()
-                });
+                    StatusCode = StatusCodes.Status403Forbidden
+                };
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error("Unable to validate request authorization", e);
             throw;
         }
         finally

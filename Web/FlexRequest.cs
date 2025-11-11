@@ -23,6 +23,7 @@ public abstract class FlexRequest
     public abstract FlexRequestBuilder OnSuccess(Action<FlexRequestResult> callback);
     public abstract FlexRequestBuilder OnError(Action<FlexRequestResult> callback);
     public abstract FlexRequestBuilder OnTimeout(Action<FlexRequestResult> callback);
+    public abstract FlexRequestBuilder SendAsFormData();
     #endregion Configuration
     
     #region Synchronous Methods
