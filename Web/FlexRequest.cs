@@ -24,6 +24,7 @@ public abstract class FlexRequest
     public abstract FlexRequestBuilder OnError(Action<FlexRequestResult> callback);
     public abstract FlexRequestBuilder OnTimeout(Action<FlexRequestResult> callback);
     public abstract FlexRequestBuilder SendAsFormData();
+    public abstract FlexRequestBuilder SendAsMultipartContent(Action<MultipartContentBuilder> builder);
     #endregion Configuration
     
     #region Synchronous Methods

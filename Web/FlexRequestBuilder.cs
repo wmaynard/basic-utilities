@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text;
 using Maynard.Interfaces;
 using Maynard.Json;
@@ -14,6 +15,8 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
     internal int _maxRetries;
     internal int _timeoutInSeconds = 30;
     internal bool _sendAsFormData = false;
+    internal bool _sendAsMultipartContent = false;
+    private MultipartFormDataContent _multipartContent;
     private string _url;
     internal HttpRequestMessage _request = new();
     internal Action<FlexRequestResult> _onSuccess;
@@ -30,6 +33,19 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
     public override FlexRequestBuilder SendAsFormData()
     {
         _sendAsFormData = true;
+        _sendAsMultipartContent = false;
+        return this;
+    }
+
+    public override FlexRequestBuilder SendAsMultipartContent(Action<MultipartContentBuilder> builder)
+    {
+        _sendAsFormData = false;
+        _sendAsMultipartContent = true;
+        
+        MultipartContentBuilder contentBuilder = new();
+        builder(contentBuilder);
+        _multipartContent = contentBuilder.Build();
+
         return this;
     }
 
@@ -260,10 +276,10 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
             url.Remove(url.Length - 1, 1);
         }
         _request.RequestUri = new Uri(url.ToString(), UriKind.RelativeOrAbsolute);
-
-
+        
         _request.Content = _body switch
         {
+            _ when _sendAsMultipartContent => _multipartContent,
             _ when _body == null => null,
             _ when _sendAsFormData => _body.ConvertToFormData(),
             _ => new StringContent(_body, Encoding.UTF8, "application/json")
@@ -276,4 +292,23 @@ public sealed class FlexRequestBuilder(string baseUri, Func<FlexRequestBuilder, 
     {
         _request?.Dispose();
     }
+}
+
+public class MultipartContentBuilder
+{
+    private readonly MultipartFormDataContent _content = new($@"-_-{nameof(FlexApiClient)}-{Guid.NewGuid()}-_-");
+
+    public MultipartContentBuilder Add(HttpContent content, string name = null, string fileName = null, string mimeType = null)
+    {
+        if (!string.IsNullOrWhiteSpace(mimeType))
+            content.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
+        if (string.IsNullOrWhiteSpace(name))
+            _content.Add(content);
+        else if (string.IsNullOrWhiteSpace(fileName))
+            _content.Add(content, name);
+        else
+            _content.Add(content, name, fileName);
+        return this;
+    }
+    public MultipartFormDataContent Build() => _content;
 }

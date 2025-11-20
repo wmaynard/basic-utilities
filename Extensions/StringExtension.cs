@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 using Maynard.Logging;
 
 namespace Maynard.Extensions;
@@ -95,4 +96,25 @@ public static class StringExtension
     public static string ToCamelCase(this string input) => string.IsNullOrWhiteSpace(input) || char.IsLower(input[0])
         ? input
         : char.ToLowerInvariant(input[0]) + input[1..];
+
+    /// <summary>
+    /// Combines two strings into a path / URI.
+    /// </summary>
+    /// <param name="baseUri"></param>
+    /// <param name="relative"></param>
+    /// <returns></returns>
+    public static string Combine(this string baseUri, string relative)
+    {
+        if (string.IsNullOrWhiteSpace(relative))
+            return baseUri;
+        if (string.IsNullOrWhiteSpace(baseUri))
+            return relative;
+        
+        if (baseUri.EndsWith('/'))
+            baseUri = baseUri[..^1];
+        if (relative.StartsWith('/'))
+            relative = relative[1..];
+
+        return $"{baseUri}/{relative}";
+    }
 }

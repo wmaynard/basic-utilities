@@ -15,6 +15,7 @@ public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
     private static int Jitter => Random.Shared.Next(0, 100);
     private string BaseUri { get; set; } = baseUri;
     public override FlexRequestBuilder SendAsFormData() => CreateBuilder().SendAsFormData();
+    public override FlexRequestBuilder SendAsMultipartContent(Action<MultipartContentBuilder> builder) => CreateBuilder().SendAsMultipartContent(builder);
 
     public override FlexRequestBuilder AddAuthorization(string token) => CreateBuilder().AddAuthorization(token);
     public override FlexRequestBuilder AppendHeader(string key, string value) => CreateBuilder().AppendHeader(key, value);
@@ -100,7 +101,7 @@ public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
                 result.Data = interim.Data;
                 result.ElapsedMs = interim.Timestamp - timestamp;
 
-                if (!result.IsSuccess)
+                if (!result.IsSuccess && builder._onError == null)
                     throw new Exception(result.Data?.Optional<string>("message") ?? "Unknown error.  Check the endpoint.");
                 builder._onSuccess?.Invoke(result);
             }
