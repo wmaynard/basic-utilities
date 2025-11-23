@@ -43,7 +43,8 @@ public class FlexApiJsClient(IJSRuntime js, string baseUri) : FlexApiClient(null
                    const text = await response.text();
                    return { code: response.status, body: text };
                })();
-               """;
+               """
+                .Replace("body: '',", ""); // Required for body-less methods; otherwise an exception gets thrown.
             
             FlexJson response = (await js.InvokeAsync<object>("eval", token, request)).ToString();
 

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Maynard.Web;
 
+// TODO: Guarantee httpClientFactory not null when creating
 public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri) : FlexRequest
 {
     private static int Jitter => Random.Shared.Next(0, 100);
@@ -101,9 +102,14 @@ public class FlexApiClient(IHttpClientFactory httpClientFactory, string baseUri)
                 result.Data = interim.Data;
                 result.ElapsedMs = interim.Timestamp - timestamp;
 
-                if (!result.IsSuccess && builder._onError == null)
-                    throw new Exception(result.Data?.Optional<string>("message") ?? "Unknown error.  Check the endpoint.");
-                builder._onSuccess?.Invoke(result);
+                if (!result.IsSuccess)
+                {
+                    if (builder._onError == null)
+                        throw new Exception(result.Data?.Optional<string>("message") ?? "Unknown error.  Check the endpoint.");
+                    builder._onError?.Invoke(result);
+                }
+                else
+                    builder._onSuccess?.Invoke(result);
             }
             catch (OperationCanceledException e) when (timeoutCts.IsCancellationRequested)
             {
