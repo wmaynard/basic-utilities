@@ -96,7 +96,7 @@ public static class Log
         });
     }
 
-    private static async Task Enqueue(int ownerId, Severity severity, string message, object data, Exception exception)
+    private static Task Enqueue(int ownerId, Severity severity, string message, object data, Exception exception)
     {
         LogData log = new()
         {
@@ -117,7 +117,7 @@ public static class Log
         {
             lock (_Door)
                 Configuration.Queue.Enqueue(log, log.Timestamp);
-            return;
+            return Task.CompletedTask;
         }
 
         if (!Configuration.UseFlushing)
@@ -134,6 +134,7 @@ public static class Log
             if (Configuration.Queue.Count >= Configuration.BufferSize)
                 _ = Flush();
         }
+        return Task.CompletedTask;
     }
 
     private static void ToConsole(LogData log)
@@ -187,20 +188,22 @@ public static class Log
                 ToConsole(log);
     });
 
-    internal static async Task FlushStartupLogs()
+    internal static Task FlushStartupLogs()
     {
         if (!Configuration.RerouteLogs)
             Console.WriteLine(LogData.GetHeaders());
         _ = Flush();
+        return Task.CompletedTask;
     }
 
-    internal static async Task Disable()
+    internal static Task Disable()
     {
         Configuration.IsConfigured = true;
         Configuration.IsDisabled = true;
 
         lock (_Door)
             Configuration.Queue.Clear();
+        return Task.CompletedTask;
     }
 }
 public enum Owner { Default = 0, Will = 1 }

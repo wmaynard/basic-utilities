@@ -13,7 +13,7 @@ namespace Maynard.Web;
 public class CookiesController : FlexController
 {
     [HttpPut]
-    public async Task<IActionResult> StoreCookie()
+    public Task<IActionResult> StoreCookie()
     {
         foreach (Cookie cookie in Models.OfType<Cookie>())
             HttpContext.Response.Cookies.Append(HttpUtility.UrlEncode(cookie.Key), HttpUtility.UrlEncode(cookie.Value), new()
@@ -24,15 +24,15 @@ public class CookiesController : FlexController
                 Expires = DateTimeOffset.UtcNow.AddSeconds(cookie.LifetimeInSeconds),
                 Path = cookie.Path
             });
-        return Ok();
+        return Task.FromResult<IActionResult>(Ok());
     }
 
     [HttpDelete]
-    public async Task<IActionResult> RemoveCookie()
+    public Task<IActionResult> RemoveCookie()
     {
         foreach (string key in Require<string[]>("keys"))
             HttpContext.Response.Cookies.Delete(key);
-        return Ok();
+        return Task.FromResult<IActionResult>(Ok());
     }
 }
 

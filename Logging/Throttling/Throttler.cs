@@ -18,7 +18,7 @@ public class Throttler<T>
     /// <param name="value">The string to evaluate.</param>
     /// <param name="callback">A callback to handle the result.</param>
     /// <returns>True if the object should be ignored; false if the object should be actioned on.</returns>
-    public async Task Check(T value, Action<ThrottleEventArgs<T>> callback)
+    public Task Check(T value, Action<ThrottleEventArgs<T>> callback)
     {
         ThrottleEventArgs<T> args = new()
         {
@@ -29,7 +29,7 @@ public class Throttler<T>
         if (value == null || Threshold == 0 || WindowInSeconds == 0)
         {
             callback.Invoke(args);
-            return;
+            return Task.CompletedTask;
         }
         
         int hash = value.GetHashCode();
@@ -62,6 +62,7 @@ public class Throttler<T>
             _counts[hash] = 0;
         }
         callback.Invoke(args);
+        return Task.CompletedTask;
     }
 
     public async Task Check(T value, Action<T> onValid) => await Check(value, callback: args =>

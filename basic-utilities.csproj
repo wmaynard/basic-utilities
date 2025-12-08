@@ -12,7 +12,8 @@
         <Description>A collection of essential shared tools for various primarily-backend projects.</Description>
         <Copyright>Will Maynard 2025</Copyright>
         <PackageProjectUrl>https://github.com/wmaynard/basic-utilities</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/wmaynard/basic-utilities/blob/main/LICENSE</PackageLicenseUrl>
+<!--        <PackageLicenseUrl>https://github.com/wmaynard/basic-utilities/blob/main/LICENSE</PackageLicenseUrl>-->
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryUrl>https://github.com/wmaynard/basic-utilities</RepositoryUrl>
         <Company>Will Maynard</Company>
         <Product>Maynard.Utilities</Product>

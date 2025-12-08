@@ -18,10 +18,10 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
     internal const string KEY_GEODATA = "locationData";
     internal const string KEY_MODELS = "validatedModels";
     
-    public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
+    public Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         if (context.ActionDescriptor is not ControllerActionDescriptor)
-            return;
+            return Task.CompletedTask;
 
         RequireAuth[] auths = context.GetControllerAttributes<RequireAuth>();
         NoAuth noAuth = context.GetControllerAttributes<NoAuth>().FirstOrDefault();
@@ -48,7 +48,7 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
             if (token == null)
             {
                 if (optional)
-                    return;
+                    return Task.CompletedTask;
                 Log.Verbose("No token present in request.", new
                 {
                     Help = "The authorization header with JWT is either missing or incorrect.",
@@ -58,7 +58,7 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
                 {
                     StatusCode = StatusCodes.Status403Forbidden
                 };
-                return;
+                return Task.CompletedTask;
             }
 
             if (adminRequired && !token.IsAdmin)
@@ -76,6 +76,7 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
         {
             context.HttpContext.Items[KEY_TOKEN] = token;
         }
+        return Task.CompletedTask;
     }
     
     public async Task OnResourceExecutionAsync(ResourceExecutingContext context, ResourceExecutionDelegate next)
@@ -88,7 +89,7 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
         await next();
     }
     
-    public async Task OnExceptionAsync(ExceptionContext context)
+    public Task OnExceptionAsync(ExceptionContext context)
     {
         Exception exception = context.Exception;
         
@@ -120,6 +121,7 @@ public class FlexFilter : IAsyncAuthorizationFilter, IAsyncResourceFilter, IAsyn
         context.Result = new BadRequestObjectResult(response);
 
         // TODO: Handle specific exceptions for special error codes, e.g. auth / 403s.
+        return Task.CompletedTask;
     }
 }
 

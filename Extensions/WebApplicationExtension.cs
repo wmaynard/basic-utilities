@@ -42,7 +42,7 @@ public static class WebApplicationExtension
             config.ConfigureLogging(logs => logs.Reroute((_, log) => Console.WriteLine($"{log.Severity} {log.Message}")));
             _ = Log.FlushStartupLogs();
             #elif RELEASE
-            Log.Disable();
+            _ = Log.Disable();
             #endif
         }
         
