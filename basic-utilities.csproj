@@ -16,11 +16,11 @@
         <RepositoryUrl>https://github.com/wmaynard/basic-utilities</RepositoryUrl>
         <Company>Will Maynard</Company>
         <Product>Maynard.Utilities</Product>
-        <AssemblyVersion>0.8.11</AssemblyVersion>
+        <AssemblyVersion>0.8.12</AssemblyVersion>
         <AssemblyName>Maynard.Utilities</AssemblyName>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageIcon>icon.png</PackageIcon>
-        <Version>0.8.11</Version>
+        <Version>0.8.12</Version>
     </PropertyGroup>
     
   <ItemGroup>
