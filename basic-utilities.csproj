@@ -16,11 +16,11 @@
         <RepositoryUrl>https://github.com/wmaynard/basic-utilities</RepositoryUrl>
         <Company>Will Maynard</Company>
         <Product>Maynard.Utilities</Product>
-        <AssemblyVersion>0.8.12</AssemblyVersion>
+        <AssemblyVersion>0.8.13</AssemblyVersion>
         <AssemblyName>Maynard.Utilities</AssemblyName>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageIcon>icon.png</PackageIcon>
-        <Version>0.8.12</Version>
+        <Version>0.8.13</Version>
     </PropertyGroup>
     
   <ItemGroup>
@@ -50,7 +50,9 @@
       <Folder Include=".github\" />
     </ItemGroup>
 
-    <Target Name="PushToNuGet" AfterTargets="Pack" Condition="'$(Configuration)' == 'Release'">
+    <Target Name="PushToNuGet"
+            AfterTargets="Pack"
+            Condition="'$(Configuration)' == 'Release' AND '$(NugetApiKey)' != ''">
         <Exec Command="dotnet nuget push $(PackageOutputPath)\*.nupkg --skip-duplicate --api-key $(NugetApiKey) --source https://api.nuget.org/v3/index.json" />
     </Target>
 

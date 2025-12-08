@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text;
 using Maynard.Json.Utilities;
 using Maynard.Logging;
 using Maynard.Singletons;
@@ -44,6 +45,7 @@ public static class ServiceCollectionExtension
         
 
         Log.Verbose("Adding support for cookies, FlexApiClient, and FlexApiJsClient");
+        Log.Verbose($"Adding MaynardTools; accepted baseUrl is {baseUrl}");
         services.AddCors(options =>
         {
             options
@@ -64,25 +66,52 @@ public static class ServiceCollectionExtension
         .AddScoped(provider =>
         {
             IHttpClientFactory factory = provider.GetRequiredService<IHttpClientFactory>();
-            IHttpContextAccessor accessor = provider.GetRequiredService<IHttpContextAccessor>();
-            HttpRequest request = accessor.HttpContext?.Request;
+
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                IHttpContextAccessor accessor = provider.GetRequiredService<IHttpContextAccessor>();
+                Log.Warn("Base URL is empty; attempting to parse from HTTP request.");
+                HttpRequest request = accessor.HttpContext?.Request;
             
-            string baseUrl = request != null 
-                ? $"{request.Scheme}://{request.Host}{request.PathBase}"
-                : "/";
+                baseUrl = request != null 
+                    ? $"{request.Scheme}://{request.Host}{request.PathBase}"
+                    : "/";
+            }
             return new FlexApiClient(factory, baseUrl);
         })
         .AddScoped(provider =>
         {
+            // Add the FlexApiJsClient.  Important to note here that for release builds, we absolutely cannot
+            // allow the URL to contain localhost or HTTP, as these requests are executed from end user browsers.
+            
             IJSRuntime js = provider.GetRequiredService<IJSRuntime>();
+
+            if (!string.IsNullOrWhiteSpace(baseUrl) && !baseUrl.Contains("localhost"))
+                return new FlexApiJsClient(js, baseUrl);
+            
             IHttpContextAccessor httpContextAccessor = provider.GetRequiredService<IHttpContextAccessor>();
             HttpRequest request = httpContextAccessor.HttpContext?.Request;
+
+            if (request == null)
+            {
+                Log.Warn("HttpRequest was null when initializing FlexApiJsClient; this should not happen.");
+                return new FlexApiJsClient(js, "/");
+            }
+
+            StringBuilder sb = new(request.Scheme);
+            #if RELEASE
+            if (request.Scheme == "http")
+            {
+                Log.Verbose("HTTP request scheme is HTTP; forcing HTTPS.");
+                sb.Append('s');
+            }
+            #endif
+
+            sb.Append("://");
+            sb.Append(request.Host);
+            sb.Append(request.PathBase);
     
-            string baseUrl = request != null 
-                ? $"{request.Scheme}://{request.Host}{request.PathBase}"
-                : "/";
-    
-            return new FlexApiJsClient(js, baseUrl);
+            return new FlexApiJsClient(js, sb.ToString());
         })
         .AddHttpClient(nameof(FlexApiClient), (provider, client) =>
         {

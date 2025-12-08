@@ -6,10 +6,6 @@ namespace Maynard.Extensions;
 
 public static class WebApplicationBuilderExtension
 {
-    // TODO: This method currently returns the deployed site URL, but really should return the localhost URL.
-    // To elaborate, when deployed on a server, using the site URL can cause the request to make a round trip to a load balancer.
-    // Since we're running the app locally already, it's far more efficient to skip this trip and just hit the local endpoints directly.
-    // In these cases, HTTP may also be acceptable, since the request doesn't leave the local machine.
     public static string GetBaseUrl(this WebApplicationBuilder builder)
     {
         // e.g. https://localhost:3013;http://localhost:3012
@@ -39,16 +35,6 @@ public static class WebApplicationBuilderExtension
             {
                 Help = "You may need to supply the base URL directly for certain features, like CORS, to work correctly."
             });
-        #if RELEASE
-        else if (baseUrl.StartsWith("http://"))
-        {
-            baseUrl = baseUrl.Replace("http://", "https://");
-            Log.Warn("Base URL was detected as HTTP, but HTTPS is required for security.  HTTPS will be used instead.", new
-            {
-                Help = "If your internal API calls begin to fail, you may need to debug Maynard.Utilities."
-            });
-        }
-        #endif
         return baseUrl;
     }
 }
