@@ -76,7 +76,7 @@ public class TokenInfo : FlexModel
     [FlexKeys(json: "validFrom", bson: "nbf", Ignore.WhenDefault)]
     public long ValidFrom { get; set; }
 
-    public string ToJwt() => RawJwt ??= JwtHelper.GenerateJwt(this);
+    public string ToJwt() => RawJwt ??= JwtHelper.GenerateJwt(this, isAdmin: IsAdmin);
     public static TokenInfo FromJwt(string jwt) => JwtHelper.ValidateJwt(jwt);
 
     public static bool TryFromJwt(string jwt, out TokenInfo token)

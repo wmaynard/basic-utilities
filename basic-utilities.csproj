@@ -17,11 +17,11 @@
         <RepositoryUrl>https://github.com/wmaynard/basic-utilities</RepositoryUrl>
         <Company>Will Maynard</Company>
         <Product>Maynard.Utilities</Product>
-        <AssemblyVersion>0.8.14</AssemblyVersion>
+        <AssemblyVersion>0.8.15</AssemblyVersion>
         <AssemblyName>Maynard.Utilities</AssemblyName>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageIcon>icon.png</PackageIcon>
-        <Version>0.8.14</Version>
+        <Version>0.8.15</Version>
     </PropertyGroup>
     
   <ItemGroup>
@@ -49,6 +49,10 @@
 
     <ItemGroup>
       <Folder Include=".github\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\flex-json\flex-json.csproj" />
     </ItemGroup>
 
     <Target Name="PushToNuGet"
